@@ -1,0 +1,25 @@
+comment_id,story,platform,source,body,hand_domain,hand_sentiment,inclusion_prob,sampling_stratum
+gold001,jets,youtube,vid_a,Their jets burn more fuel in an afternoon than my car does in a year.,environment,2,0.5,jets/environment
+gold002,jets,youtube,vid_a,Fair enough. If you can afford a jet you can fly one.,none,4,0.1,jets/unclassified
+gold003,jets,youtube,vid_b,They lecture us about carbon and then fly to the conference on a private plane.,"environment, social",1,0.5,jets/environment
+gold004,jets,youtube,vid_b,The sound in this video is a bit quiet.,none,0,0.1,jets/unclassified
+gold005,jets,youtube,vid_b,Tax the fuel these planes use the same way we tax petrol.,"democracy, environment",2,0.5,jets/environment
+gold006,jets,youtube,vid_a,Rules for us and none for them. It makes people bitter.,social,2,0.25,jets/social
+gold007,luigi,youtube,vid_c,Insurers make record profits by saying no to sick people.,economics,1,0.25,luigi/economics
+gold008,luigi,youtube,vid_c,Whatever you think of insurers this was still a killing.,none,4,0.1,luigi/unclassified
+gold009,luigi,youtube,vid_d,The whole system is built so a few people get rich off denied claims.,economics,1,0.25,luigi/economics
+gold010,luigi,youtube,vid_d,Ordinary families are one illness away from ruin while executives get bonuses.,"economics, social",1,0.25,luigi/economics
+gold011,luigi,youtube,vid_c,Who is the presenter? She explains things well.,none,0,0.1,luigi/unclassified
+gold012,luigi,youtube,vid_d,Lobbying keeps the law on the side of the insurers every time.,democracy,2,0.5,luigi/democracy
+gold013,musk,youtube,vid_e,One person owning a news platform that big is bad for elections.,democracy,1,0.5,musk/democracy
+gold014,musk,youtube,vid_e,He risked his own money on rockets and cars. That deserves some credit.,none,5,0.1,musk/unclassified
+gold015,musk,youtube,vid_f,He changes the rules on the site whenever someone criticises him.,democracy,2,0.5,musk/democracy
+gold016,musk,youtube,vid_f,The workers who built the cars see none of that wealth.,"economics, social",1,0.25,musk/economics
+gold017,musk,youtube,vid_e,first comment,none,0,0.1,musk/unclassified
+gold018,musk,youtube,vid_f,People idolise him and it says a lot about how unequal things have become.,social,2,0.25,musk/social
+gold019,propublica,youtube,vid_g,A teacher pays a higher tax rate than a billionaire. That is the scandal.,democracy,1,0.5,propublica/democracy
+gold020,propublica,youtube,vid_g,Unrealised gains should not be taxed. You have not sold anything.,democracy,4,0.5,propublica/democracy
+gold021,propublica,youtube,vid_h,They borrow against their shares so they never have any taxable income.,"democracy, economics",2,0.5,propublica/democracy
+gold022,propublica,youtube,vid_h,Good reporting. More of this please.,none,0,0.1,propublica/unclassified
+gold023,propublica,youtube,vid_g,Public services are cut while the richest pay almost nothing in.,"economics, social",1,0.25,propublica/economics
+gold024,propublica,youtube,vid_h,It is all legal and that is exactly what is wrong with the rules.,democracy,2,0.5,propublica/democracy

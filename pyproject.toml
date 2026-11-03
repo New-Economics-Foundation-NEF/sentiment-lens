@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ewl"
+version = "0.1.0"
+description = "Extreme Wealth Line: collecting and labelling social media comments about extreme wealth"
+requires-python = ">=3.9"
+
+# Only what every path needs. The optional backends stay optional on purpose:
+# a missing one disables an arm of the scorecard rather than breaking the run,
+# which is what lets the pipeline work on a machine with no API keys.
+dependencies = [
+    "requests==2.32.3",
+    "beautifulsoup4==4.12.3",
+    "vaderSentiment==3.3.2",
+    "google-api-python-client>=2.100",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=1.0,<2"]
+openai = ["openai>=1.0,<4"]
+google = ["google-genai>=1.0"]
+ollama = ["ollama==0.4.7"]
+retrieval = ["sentence-transformers>=2.2"]
+language = ["langdetect==1.0.9"]
+# Reading and writing .xlsx coder files (ewl-validate, ewl-agreement, the scripts/ helpers)
+# and plotting.
+analysis = ["openpyxl>=3.1", "matplotlib>=3.8"]
+docs = ["mkdocs-material>=9.5"]
+
+[project.scripts]
+ewl-collect  = "ewl.collect.youtube:main"
+ewl-collect-full-corpus = "ewl.collect.youtube_full_corpus:main"
+ewl-merge    = "ewl.collect.merge:main"
+ewl-clean-videos = "ewl.collect.clean_videos:main"
+ewl-redact   = "ewl.collect.redact:main"
+ewl-gemma    = "ewl.label.classify_gemma:main"
+ewl-batches  = "ewl.collect.batches:main"
+ewl-anthropic-batch = "ewl.label.anthropic_batch:main"
+ewl-primary-category = "ewl.collect.primary_category:main"
+ewl-adjudicate = "ewl.analyse.adjudicate:main"
+ewl-classify = "ewl.label.classify:main"
+ewl-keywords = "ewl.label.keywords:main"
+ewl-evaluate = "ewl.analyse.evaluate:main"
+ewl-agreement = "ewl.analyse.agreement:main"
+ewl-validate = "ewl.analyse.validate:main"
+ewl-report   = "ewl.analyse.report:main"
+ewl-export-dashboard = "ewl.analyse.export_dashboard:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ewl = ["keywords.yml"]

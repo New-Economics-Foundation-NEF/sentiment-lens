@@ -1,0 +1,78 @@
+name: tests
+
+# Runs on every push and pull request, per issue #33 item 14: the harness
+# previously only ran when someone remembered to, which meant a regression
+# could land silently -- exactly the kind of thing the independent reviews in
+# #36 and #37 found after the fact.
+#
+# The harness needs no model, no network and no API key: it runs on the `stub`
+# and `keyword` judges. So this workflow needs no secrets and stays fast.
+# Blocks needing an optional package skip themselves and say so, and that
+# skipping is itself under test.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  # A new push supersedes an in-flight run on the same branch. Without this,
+  # pushing three fixes in a row leaves two obsolete runs competing for
+  # runners and reporting stale results.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # 24.04: setup-python has no 3.9 build for ubuntu-latest (26.04), and 3.9 is the floor.
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor declared in pyproject.toml and a current release. Jamie
+        # runs Windows and this runs Linux, so the matrix is about the
+        # language version rather than the OS -- the Windows-specific paths
+        # (cp1252 stdout, the BOM, CRLF row terminators) are covered by
+        # assertions in the harness rather than by a runner.
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install the package and its dependencies
+        run: pip install -e ".[analysis]"
+
+      - name: Install cheap optional dependencies
+        # langdetect is small and exercises the detected_lang path. The others
+        # (sentence-transformers, anthropic, ollama) are deliberately left out:
+        # they are slow or need keys, and the harness skips their blocks by
+        # design, which is the behaviour we want CI to prove works.
+        run: pip install "langdetect==1.0.9"
+
+      - name: Byte-compile everything
+        # Catches a syntax error in a module no test imports, which the harness
+        # would otherwise miss entirely.
+        run: python -m compileall -q src tests
+
+      - name: No comment data in the tracked files
+        # Comment text, ids and author hashes must never be committed. .gitignore does not
+        # stop a web upload or `git add -f`; this does, on the commit that adds the file.
+        run: python tests/check_no_personal_data.py
+
+      - name: Run the test harness
+        run: python tests/test_harness.py
+
+      - name: Check the console scripts are wired up
+        # A broken entry point in pyproject.toml does not fail any import, so
+        # nothing else here would catch it.
+        run: |
+          for cmd in ewl-collect ewl-collect-full-corpus ewl-merge ewl-classify \
+                     ewl-keywords ewl-evaluate ewl-validate ewl-report \
+                     ewl-export-dashboard ewl-clean-videos ewl-redact ewl-primary-category ewl-gemma ewl-batches ewl-anthropic-batch \
+                     ewl-adjudicate ewl-agreement; do
+            echo "--- $cmd --help"
+            EWL_AUTHOR_SALT=ci-placeholder-salt-value "$cmd" --help > /dev/null
+          done

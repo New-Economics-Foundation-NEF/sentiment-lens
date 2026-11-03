@@ -1,0 +1,290 @@
+# Harm-domain vocabulary, seeded from "Risks of Extreme Wealth" (Shotter, 2024)
+# and "Exploring an Extreme Wealth Line" (NEF/GAM/PM UK, 2025).
+#
+# This list is meant to be edited by the team, not by the code. Every term here
+# is a decision someone can argue with, which is the point: unlike the LLM, a
+# reader can see exactly why a comment was labelled the way it was.
+#
+# Terms are matched case-insensitively on word boundaries. Use a trailing * for
+# a prefix match (tax* matches tax, taxes, taxation).
+
+democracy:
+  - lobby*
+  - donor*
+  - donation*
+  - bribe*
+  - corrupt*
+  - oligarch*
+  - tax avoid*
+  - tax dodg*
+  - tax haven*
+  - offshore
+  - loophole*
+  - non-dom
+  - "buy* the election"
+  - "own* the media"
+  - media ownership
+  - propaganda
+  - narrative
+  - "above the law"
+  - "different rules"
+  - "one rule for"
+  - impunity
+  - lawyer* up
+  - regulatory capture
+  - revolving door
+  - tax*
+  - taxpayer*
+  - hmrc
+  - irs
+  - evasion
+  - fraud*
+  - launder*
+  - "monopoly power"
+  - politic*
+  - government
+  - senator*
+  - congress*
+  - parliament
+  - mp
+  - president
+  - election*
+  - vote*
+  - voter*
+  - democracy
+  - democratic
+  - "free speech"
+  - censor*
+  - twitter
+  - "x.com"
+  - platform
+  - journalis*
+  - press
+  - news
+  - misinformation
+  - court*
+  - judge*
+  - jail
+  - prison
+  - prosecut*
+  - charge*
+  - law
+  - legal
+  - illegal
+  - justice
+  - sue*
+  - lawsuit
+  - accountab*
+  - immunit*
+  - "supreme court"
+  - pardon
+  - "donor class"
+  - "dark money"
+  - "super pac"
+  - lobbyist*
+  - "offshore account*"
+  - panama
+  - "tax bill"
+  - write-off*
+  - subsid*
+
+economics:
+  - monopol*
+  - cartel
+  - "market power"
+  - competition
+  - price goug*
+  - inflation
+  - cost of living
+  - wage*
+  - underpaid
+  - minimum wage
+  - profit*
+  - shareholder*
+  - buyback*
+  - dividend*
+  - trickle down
+  - hoover up
+  - landlord*
+  - rent seek*
+  - bailout*
+  - financial crisis
+  - "the economy"
+  - billion* in profit
+  - econom*
+  - market*
+  - stock*
+  - "share price"
+  - valuation
+  - invest*
+  - capital*
+  - corporat*
+  - compan*
+  - business*
+  - "ceo pay"
+  - "executive pay"
+  - bonus*
+  - salar*
+  - salary
+  - "pay rise"
+  - worker*
+  - employee*
+  - staff
+  - layoff*
+  - fired
+  - job*
+  - union*
+  - strike*
+  - exploit*
+  - "supply chain"
+  - consumer*
+  - customer*
+  - price*
+  - cost*
+  - expensive
+  - afford*
+  - debt
+  - "interest rate*"
+  - recession
+  - gdp
+  - productivity
+  - tariff*
+  - trade
+  - amazon
+  - walmart
+  - tesla
+  - "insurance compan*"
+  - "private equity"
+  - "hedge fund*"
+  - "wall street"
+  - "the city"
+  - "money printing"
+  - "wealth tax"
+  - redistribut*
+
+environment:
+  - carbon
+  - emission*
+  - co2
+  - footprint
+  - climate
+  - private jet*
+  - superyacht*
+  - yacht*
+  - flight*
+  - fossil fuel*
+  - oil compan*
+  - pollut*
+  - sustainab*
+  - offset*
+  - greenwash*
+  - "the planet"
+  - environment*
+  - green
+  - renewab*
+  - solar
+  - "wind farm*"
+  - "electric car*"
+  - ev
+  - battery
+  - coal
+  - oil
+  - gas
+  - drilling
+  - deforest*
+  - biodivers*
+  - ocean*
+  - plastic
+  - waste
+  - consumption
+  - luxury
+  - mansion*
+  - supercar*
+  - helicopter*
+  - "air travel"
+  - travel*
+  - "tonnes of"
+  - "global warming"
+  - "net zero"
+  - cop2*
+  - cop3*
+  - recycl*
+  - "carbon tax"
+
+social:
+  - inequal*
+  - unfair
+  - fair share
+  - deserve*
+  - merit*
+  - earned it
+  - hard work
+  - poverty
+  - homeless*
+  - food bank*
+  - housing
+  - nhs
+  - healthcare
+  - insurance
+  - hospital
+  - education
+  - eat the rich
+  - guillotine*
+  - pitchfork*
+  - "the 1%"
+  - working class
+  - greed*
+  - "the poor"
+  - "poor people"
+  - "ordinary people"
+  - "normal people"
+  - "average person"
+  - "working people"
+  - society
+  - communit*
+  - divide*
+  - "class war*"
+  - privileg*
+  - entitled
+  - selfish
+  - charit*
+  - philanthrop*
+  - "donate to"
+  - "help people"
+  - suffering
+  - struggl*
+  - starv*
+  - hunger
+  - benefit*
+  - welfare
+  - pension*
+  - disabilit*
+  - racis*
+  - sexis*
+  - women
+  - immigrant*
+  - "mental health"
+  - suicide
+  - died
+  - death
+  - kill*
+  - denied
+  - claim*
+  - deny*
+  - greed
+  - hoard*
+  - obscene
+  - immoral
+  - "should not exist"
+  - "no one needs"
+  - "violence"
+
+# CAUTION — circular terms.
+# Some terms above name the subject of a specific story rather than a harm:
+# "twitter", "x.com", "platform", "free speech" and "news" under democracy;
+# "private jet" and "flight" under environment; "insurance compan*" under
+# economics. Under the story they belong to, they will label a comment for
+# merely mentioning what everyone is already talking about.
+# Measured on the Musk/Reddit thread: democracy falls from 43% to 22% of
+# comments once those five terms are removed. Report per-story figures with
+# story-specific terms excluded, or report both.

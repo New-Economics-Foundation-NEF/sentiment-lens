@@ -1,0 +1,71 @@
+site_name: "ewl: social sentiment labelling"
+site_description: Label social-media comments about extreme wealth by harm domain and stance, validate the labels and correct prevalence for model error.
+site_url: https://new-economics-foundation-nef.github.io/ewl-social-sentiment/
+repo_url: https://github.com/New-Economics-Foundation-NEF/ewl-social-sentiment
+repo_name: ewl-social-sentiment
+edit_uri: edit/main/docs/
+docs_dir: docs
+
+# gen_cli.py is the generator for cli.md, not a page.
+exclude_docs: |
+  gen_cli.py
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: installation.md
+      - Quickstart: quickstart.md
+  - Guide:
+      - The pipeline: pipeline.md
+      - Judges and scorers: judges.md
+      - Long runs and batches: batches.md
+      - Validation: validation.md
+      - Correcting prevalence: correction.md
+      - Full run, in order: full-run.md
+      - Data protection: data-protection.md
+  - Reference:
+      - Command reference: cli.md
+      - Development: development.md

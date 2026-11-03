@@ -1,0 +1,37 @@
+# Order matters: the last matching pattern wins, so the negation has to come
+# AFTER the rule it exempts. With "!sample_*.csv" first, "*.csv" re-ignored
+# the sample files and they could not be committed at all.
+*.csv
+!sample_*.csv
+!examples/synthetic_*.csv
+# Comment text plus hashed usernames is personal data under UK GDPR (CLAUDE.md
+# section 10): none of these folders or file types may be committed.
+official-data/
+archive/
+Full Corpus Data/
+*.xlsx
+*.xls
+*.xlsm
+*.ods
+*.tsv
+*.parquet
+*.bak
+*.jsonl
+# Run records list the example comments' ids (fixed_examples.ids).
+*.run.json
+
+*.egg-info/
+.venv/
+__pycache__/
+build/
+dashboard/data/*
+!dashboard/data/results.json
+data/
+dist/
+
+# Paper build artefacts (main.pdf is committed; the HTML intermediate is not)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
