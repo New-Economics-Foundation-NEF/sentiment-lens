@@ -22,7 +22,7 @@ OUT=$(mktemp -d)
 ## 1. Label the comments
 
 ```bash
-ewl-classify examples/synthetic_comments.csv --judge keyword --no-cache --output "$OUT/out.csv"
+slens-classify examples/synthetic_comments.csv --judge keyword --no-cache --output "$OUT/out.csv"
 ```
 
 `--judge keyword` picks the keyword matcher. `--no-cache` skips the response cache, which a
@@ -32,7 +32,7 @@ VADER is a placeholder here, not a scorer to quote (see [Judges and scorers](jud
 The summary goes to the terminal (trimmed):
 
 ```text
-NOTE: No manifest for synthetic_comments.csv -- it was not frozen by ewl-merge, so nothing here can confirm it has not changed.
+NOTE: No manifest for synthetic_comments.csv -- it was not frozen by slens-merge, so nothing here can confirm it has not changed.
 Judge: keyword:keywords.yml | examples: fixed(25) | votes: 1 | sentiment: vader
 
 Labelled 12 comments with keyword:keywords.yml (1 vote(s) each)
@@ -49,7 +49,7 @@ Stability is not accuracy. Run evaluate.py against a hand-coded gold set before 
 Run record written to out.csv.run.json
 ```
 
-The `NOTE` about a manifest is expected: the example file was not frozen by `ewl-merge`.
+The `NOTE` about a manifest is expected: the example file was not frozen by `slens-merge`.
 
 Two files are written:
 
@@ -72,7 +72,7 @@ To score a labelling run, the gold comments must be labelled by the same judge, 
 settings as the corpus:
 
 ```bash
-ewl-classify examples/synthetic_gold.csv --judge keyword --no-cache --output "$OUT/gold_labelled.csv"
+slens-classify examples/synthetic_gold.csv --judge keyword --no-cache --output "$OUT/gold_labelled.csv"
 ```
 
 The output keeps the hand codes and inclusion probabilities beside the machine labels.
@@ -80,7 +80,7 @@ The output keeps the hand codes and inclusion probabilities beside the machine l
 ## 3. Score the labels against the hand codes
 
 ```bash
-ewl-validate score "$OUT/gold_labelled.csv"
+slens-validate score "$OUT/gold_labelled.csv"
 ```
 
 ```text
@@ -101,17 +101,17 @@ describe a keyword list on 24 invented comments; they say nothing about any real
 To compare several judges at once on the gold set, use the scorecard:
 
 ```bash
-ewl-evaluate scorecard examples/synthetic_gold.csv --arm keyword/none --arm stub/fixed \
+slens-evaluate scorecard examples/synthetic_gold.csv --arm keyword/none --arm stub/fixed \
     --cache "$OUT/eval_cache.jsonl"
 ```
 
 ## 4. Correct a share for classifier error
 
-`ewl-report` takes the labelled corpus and the labelled gold set and estimates the true share
+`slens-report` takes the labelled corpus and the labelled gold set and estimates the true share
 of one harm domain:
 
 ```bash
-ewl-report corrected-bootstrap "$OUT/out.csv" --column domain_democracy \
+slens-report corrected-bootstrap "$OUT/out.csv" --column domain_democracy \
     --gold "$OUT/gold_labelled.csv"
 ```
 
@@ -128,7 +128,7 @@ category, and fewer than 50 is flagged as low evidence. To see the output shape 
 data only, lower the floor:
 
 ```bash
-ewl-report corrected-bootstrap "$OUT/out.csv" --column domain_democracy \
+slens-report corrected-bootstrap "$OUT/out.csv" --column domain_democracy \
     --gold "$OUT/gold_labelled.csv" --min-genuine-positives 3
 ```
 

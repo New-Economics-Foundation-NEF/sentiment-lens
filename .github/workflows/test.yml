@@ -69,10 +69,10 @@ jobs:
         # A broken entry point in pyproject.toml does not fail any import, so
         # nothing else here would catch it.
         run: |
-          for cmd in ewl-collect ewl-collect-full-corpus ewl-merge ewl-classify \
-                     ewl-keywords ewl-evaluate ewl-validate ewl-report \
-                     ewl-export-dashboard ewl-clean-videos ewl-redact ewl-primary-category ewl-gemma ewl-batches ewl-anthropic-batch \
-                     ewl-adjudicate ewl-agreement; do
+          for cmd in slens-collect slens-collect-full-corpus slens-merge slens-classify \
+                     slens-keywords slens-evaluate slens-validate slens-report \
+                     slens-export-dashboard slens-clean-videos slens-redact slens-primary-category slens-gemma slens-batches slens-anthropic-batch \
+                     slens-adjudicate slens-agreement; do
             echo "--- $cmd --help"
-            EWL_AUTHOR_SALT=ci-placeholder-salt-value "$cmd" --help > /dev/null
+            SLENS_AUTHOR_SALT=ci-placeholder-salt-value "$cmd" --help > /dev/null
           done

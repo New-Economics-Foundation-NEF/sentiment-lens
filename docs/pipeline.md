@@ -26,7 +26,7 @@ Every collector writes the same columns in the same order:
 
 Labelling only needs `body`, and uses `story` (to add story background to the prompt),
 `comment_id` and `source` when present. An input with no `story` column is labelled with
-story-free prompts, and `ewl-classify` warns.
+story-free prompts, and `slens-classify` warns.
 
 All CSVs are written as UTF-8 with a byte-order mark and read with `utf-8-sig`, so Excel opens
 them correctly. If you edit a file in Excel, save it with **CSV UTF-8**, then check the first
@@ -35,14 +35,14 @@ line still holds the real column names.
 ## 1. Collect
 
 ```bash
-ewl-collect --story jets --search "private jet emissions billionaires" \
+slens-collect --story jets --search "private jet emissions billionaires" \
     --target-videos 50 --top-n 10 --min-comments 20 --seed 7 \
     --output official-data/jets.csv \
     --video-list-output official-data/jets_videos.csv \
     --exclusion-table-output official-data/jets_exclusions.csv
 ```
 
-`ewl-collect` uses the YouTube Data API v3. It needs `YOUTUBE_API_KEY` and `EWL_AUTHOR_SALT`.
+`slens-collect` uses the YouTube Data API v3. It needs `YOUTUBE_API_KEY` and `SLENS_AUTHOR_SALT`.
 
 - **Video selection is hybrid.** It takes the `--top-n` videos by relevance, then tops up at
   random to `--target-videos`. `--search` is repeatable; every query feeds one shared,
@@ -55,7 +55,7 @@ ewl-collect --story jets --search "private jet emissions billionaires" \
 - Collect one story per run. There is no resume after the API quota runs out: a stopped run
   still writes what it collected and reports the truncation on stderr.
 
-`ewl-collect-full-corpus` takes the same arguments but turns every cap off (all comments, every
+`slens-collect-full-corpus` takes the same arguments but turns every cap off (all comments, every
 video found, no comment minimum and no Shorts filter).
 
 ## 2. Clean, merge and freeze
@@ -63,7 +63,7 @@ video found, no comment minimum and no Shorts filter).
 Drop videos that should not be in the corpus (off-topic, or posted before the story):
 
 ```bash
-ewl-clean-videos official-data/jets.csv --exclude-file excluded_video_ids.txt \
+slens-clean-videos official-data/jets.csv --exclude-file excluded_video_ids.txt \
     --output official-data/jets_clean.csv
 ```
 
@@ -73,33 +73,33 @@ Then merge every story into one corpus. Always merge, even with one input: later
 expect the merged file.
 
 ```bash
-ewl-merge official-data/jets_clean.csv official-data/luigi_clean.csv \
+slens-merge official-data/jets_clean.csv official-data/luigi_clean.csv \
     official-data/musk_clean.csv official-data/propublica_clean.csv \
     --cap-per-author 20 --cap-scope story --dedupe-bodies \
     --output official-data/master.csv
 ```
 
-- `ewl-merge` removes repeated `comment_id`s, so re-running a story and merging again is safe.
+- `slens-merge` removes repeated `comment_id`s, so re-running a story and merging again is safe.
 - `--cap-per-author N` keeps at most N comments per `author_hash`. `--cap-scope story` counts
   within each story, so the result does not depend on the order of the inputs.
 - `--dedupe-bodies` drops a comment whose text repeats an earlier one in the same story.
 
 ### Manifests
 
-`ewl-merge` writes `<corpus>.manifest.json` beside the corpus. It records the file's SHA-256
+`slens-merge` writes `<corpus>.manifest.json` beside the corpus. It records the file's SHA-256
 hash, the row, story and video counts, the input file names and a fingerprint of
-`EWL_AUTHOR_SALT` (never the salt). It holds no comment text.
+`SLENS_AUTHOR_SALT` (never the salt). It holds no comment text.
 
 Later commands check the corpus still matches its manifest and print a `NOTE` when it does not,
-or when there is no manifest. `--strict-corpus` on `ewl-classify` and `ewl-report` turns a
-mismatch into a hard stop. Use it for any run whose figures you will quote. `ewl-keywords` and
-`ewl-redact` write a manifest for their own output too.
+or when there is no manifest. `--strict-corpus` on `slens-classify` and `slens-report` turns a
+mismatch into a hard stop. Use it for any run whose figures you will quote. `slens-keywords` and
+`slens-redact` write a manifest for their own output too.
 
 ### Optional: redact
 
 ```bash
-ewl-redact official-data/master.csv                       # report only
-ewl-redact official-data/master.csv --handles leading --emails --phones \
+slens-redact official-data/master.csv                       # report only
+slens-redact official-data/master.csv --handles leading --emails --phones \
     --output official-data/master_redacted.csv
 ```
 
@@ -109,22 +109,22 @@ already have received the handles. See [Data protection](data-protection.md#reda
 ## 3. Keyword pass and primary category
 
 ```bash
-ewl-keywords official-data/master.csv --output official-data/master_kw.csv
-ewl-primary-category official-data/master_kw.csv --output official-data/master_kw_primary.csv
+slens-keywords official-data/master.csv --output official-data/master_kw.csv
+slens-primary-category official-data/master_kw.csv --output official-data/master_kw_primary.csv
 ```
 
-`ewl-keywords` adds `kw_democracy`, `kw_economics`, `kw_environment`, `kw_social` and
+`slens-keywords` adds `kw_democracy`, `kw_economics`, `kw_environment`, `kw_social` and
 `kw_unclassified` (0 or 1), `kw_domain` (up to two labels, strongest first) and `kw_evidence`
-(the matched words). The vocabulary is `src/ewl/keywords.yml`; `--keywords FILE` uses another.
+(the matched words). The vocabulary is `src/sentiment_lens/keywords.yml`; `--keywords FILE` uses another.
 `--audit` reports how much each term lifts each category.
 
-`ewl-primary-category` collapses `kw_domain` to its first label in `primary_category`, so each
+`slens-primary-category` collapses `kw_domain` to its first label in `primary_category`, so each
 comment sits in exactly one sampling stratum.
 
 ## 4. Draw the gold sample
 
 ```bash
-ewl-validate sample official-data/master_kw_primary.csv --n 400 --seed 7 \
+slens-validate sample official-data/master_kw_primary.csv --n 400 --seed 7 \
     --stratify-by story,primary_category --video-cap-fraction 0.15 \
     --output official-data/gold_sample.csv
 ```
@@ -143,7 +143,7 @@ Coding, agreement and adjudication are covered in [Validation](validation.md).
 ## 5. Label
 
 ```bash
-ewl-classify official-data/master.csv \
+slens-classify official-data/master.csv \
     --judge anthropic:claude-haiku-4-5 --sentiment llm:anthropic:claude-haiku-4-5 \
     --selector fixed --fixed-examples official-data/fixed_examples.csv \
     --votes 1 --concurrency 8 --max-cost 50 \
@@ -153,7 +153,7 @@ ewl-classify official-data/master.csv \
 [Judges and scorers](judges.md) covers every `--judge`, `--sentiment` and `--selector` value.
 For long runs, see [Long runs and batches](batches.md).
 
-Rows with no comment text are skipped and counted. `ewl-classify` adds these columns:
+Rows with no comment text are skipped and counted. `slens-classify` adds these columns:
 
 | Column | Meaning |
 |---|---|
@@ -169,7 +169,7 @@ Rows with no comment text are skipped and counted. `ewl-classify` adds these col
 | `sentiment_parse_failure`, `sentiment_no_consensus`, `sentiment_unstable`, `sentiment_votes`, `sentiment_raw_votes` | The same checks for the stance question. |
 | `compound`, `pos`, `neu`, `neg` | VADER's own scores. Blank for any other scorer. |
 
-`ewl-gemma` and `ewl-anthropic-batch replay` write the same columns.
+`slens-gemma` and `slens-anthropic-batch replay` write the same columns.
 
 ### Run records
 
@@ -188,11 +188,11 @@ Every labelling run writes `<output>.run.json` beside its output. It records:
 The run record holds no comment text from the input. It does hold comment ids when a real
 examples file is used, so it is git-ignored. Later commands read it:
 
-- `ewl-validate join` copies it beside its output, and `ewl-keywords` copies it beside its
+- `slens-validate join` copies it beside its output, and `slens-keywords` copies it beside its
   output, so the chain classify → keywords → export keeps it.
-- `ewl-validate score` and `ewl-report` read the example ids from the gold file's record and
+- `slens-validate score` and `slens-report` read the example ids from the gold file's record and
   leave those comments out of scoring.
-- `ewl-export-dashboard --scored` compares the gold file's record with the corpus's record and
+- `slens-export-dashboard --scored` compares the gold file's record with the corpus's record and
   refuses a difference in judge, scorer, prompts, examples or switches (unless
   `--allow-instrument-mismatch`). `--corpus` refuses a corpus that is not the input the record
   names, and refuses a partial run.
@@ -210,8 +210,8 @@ SHA-256 hash of:
   OpenAI effort, `|thinking_level=…` for Gemini, `|temperature=…` for a sampled Gemma run);
 - the full **prompt**, which includes the instructions, the worked examples, the story
   background and every instrument switch;
-- the **comment text**, with leading and trailing spaces removed (by `ewl-classify` and
-  `ewl-anthropic-batch`; `ewl-gemma` does not strip it);
+- the **comment text**, with leading and trailing spaces removed (by `slens-classify` and
+  `slens-anthropic-batch`; `slens-gemma` does not strip it);
 - the **vote number**.
 
 So a changed prompt, example set, switch, model or setting gets new answers; nothing is
@@ -225,28 +225,28 @@ What this gives you:
 - **Reproducing.** An API model's answers can change over time. The cache is what makes a
   re-run byte-identical. If you quote labels from an API arm, keep its cache file.
 
-Defaults: `ewl-classify` uses `data/judge_cache.jsonl` relative to where you run it (so set
-`--cache` explicitly, into your data folder), `ewl-gemma` uses `data/gemma_cache.jsonl`, and
-`ewl-anthropic-batch` uses `<out-dir>/batch_cache.jsonl`. `ewl-evaluate` caches only when
+Defaults: `slens-classify` uses `data/judge_cache.jsonl` relative to where you run it (so set
+`--cache` explicitly, into your data folder), `slens-gemma` uses `data/gemma_cache.jsonl`, and
+`slens-anthropic-batch` uses `<out-dir>/batch_cache.jsonl`. `slens-evaluate` caches only when
 `--cache` is given. `--no-cache` turns caching off.
 
 !!! warning "One cache per instrument"
     Use a fresh cache file for each real run, and a separate one for trials. A sampled Gemma
-    run (`EWL_GEMMA_TEMPERATURE` above 0) and a batch trial must not share a cache with the
+    run (`SLENS_GEMMA_TEMPERATURE` above 0) and a batch trial must not share a cache with the
     corpus run.
 
-`ewl-classify` refuses a cache that holds empty replies (left by an older version) unless
+`slens-classify` refuses a cache that holds empty replies (left by an older version) unless
 `--keep-empty-cached-replies` is passed. `--cache-only` never calls the model: it stops at the
 first comment with no cached reply.
 
 ## 6. Validate, correct and export
 
 - [Validation](validation.md): score the labels against the gold set.
-- [Correcting prevalence](correction.md): `ewl-report`.
+- [Correcting prevalence](correction.md): `slens-report`.
 - Export for the dashboard:
 
     ```bash
-    ewl-export-dashboard official-data/master_labelled.csv \
+    slens-export-dashboard official-data/master_labelled.csv \
         --output dashboard/data/results.json \
         --corpus official-data/master.csv \
         --scored official-data/gold_labelled.csv
@@ -255,6 +255,6 @@ first comment with no cached reply.
     `results.json` holds observed shares with clustered intervals, validation figures, the
     codebook (prompts, scale, story paragraphs) and provenance. It holds no comment text unless
     `--include-verbatim` is passed. It does not carry corrected (Rogan-Gladen or PPI) figures;
-    those come from `ewl-report`. Without `--scored` it refuses to write unless
+    those come from `slens-report`. Without `--scored` it refuses to write unless
     `--allow-unvalidated` is passed. Fewer than 200 scored gold comments can never be stamped
     `validated`, and a story with fewer than 8 videos gets no interval.

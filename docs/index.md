@@ -1,6 +1,6 @@
-# ewl: social sentiment labelling
+# sentiment-lens
 
-`ewl` labels public comments about extreme wealth. It was built for the Extreme Wealth Line
+`sentiment-lens` labels public comments about extreme wealth. It was built for the Extreme Wealth Line
 project, which studies YouTube comments under four news stories: private jets (`jets`), the
 killing of a health-insurance executive (`luigi`), Elon Musk's purchase of Twitter (`musk`)
 and ProPublica's reporting on billionaires' tax (`propublica`).
@@ -30,13 +30,13 @@ Python unless you want to add a model backend.
 
 ```mermaid
 flowchart LR
-    A[Collect<br>ewl-collect] --> B[Clean and freeze<br>ewl-clean-videos, ewl-merge,<br>ewl-redact]
-    B --> C[Label<br>ewl-classify, ewl-gemma,<br>ewl-anthropic-batch]
-    B --> G[Draw and hand-code<br>a gold set<br>ewl-validate sample]
+    A[Collect<br>slens-collect] --> B[Clean and freeze<br>slens-clean-videos, slens-merge,<br>slens-redact]
+    B --> C[Label<br>slens-classify, slens-gemma,<br>slens-anthropic-batch]
+    B --> G[Draw and hand-code<br>a gold set<br>slens-validate sample]
     G --> D
-    C --> D[Validate on the gold set<br>ewl-validate score,<br>ewl-evaluate]
-    D --> E[Correct prevalence<br>ewl-report]
-    E --> F[Export<br>ewl-export-dashboard]
+    C --> D[Validate on the gold set<br>slens-validate score,<br>slens-evaluate]
+    D --> E[Correct prevalence<br>slens-report]
+    E --> F[Export<br>slens-export-dashboard]
 ```
 
 Each stage reads a CSV and writes a CSV. Labelling runs also write a run record

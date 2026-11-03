@@ -42,7 +42,7 @@ def find(command):
 def run_help(argv):
     env = dict(os.environ, COLUMNS="100")
     # Some commands check for the salt on start-up. A placeholder is enough for --help.
-    env.setdefault("EWL_AUTHOR_SALT", "docs-placeholder-salt")
+    env.setdefault("SLENS_AUTHOR_SALT", "docs-placeholder-salt")
     proc = subprocess.run(argv + ["--help"], capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         raise SystemExit(f"{' '.join(argv)} --help failed:\n{proc.stderr}")

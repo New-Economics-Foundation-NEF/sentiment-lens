@@ -3,14 +3,14 @@
 ## Layout
 
 ```text
-src/ewl/
+src/sentiment_lens/
   common.py        the comment schema, author hashing, language detection
   taxonomy.py      the four harm categories, the domain prompt, the label parser, the built-in examples
   keywords.yml     the keyword vocabulary
   corpus.py        corpus manifests: hash, counts, verify
   collect/         collectors, merge, clean, redact, batches, primary category
   label/           judges, example selectors, sentiment scorers, the combined arm,
-                   instrument switches, ewl-classify, ewl-gemma, ewl-anthropic-batch
+                   instrument switches, slens-classify, slens-gemma, slens-anthropic-batch
   analyse/         validate, evaluate, agreement, adjudicate, report, export_dashboard
 tests/             the test harness and the personal-data check
 scripts/           one-off helpers (see below)
@@ -84,12 +84,12 @@ the command's argparse help, then run `docs/gen_cli.py` and commit both.
 
 ## Adding a judge backend
 
-A backend is one class with one method. The base class `Judge` in `src/ewl/label/judges.py`
+A backend is one class with one method. The base class `Judge` in `src/sentiment_lens/label/judges.py`
 owns the prompt, voting, parsing, the cache and usage accounting, so a new backend only supplies
 the call that returns one raw reply.
 
 ```python
-from ewl.label.judges import Judge, register
+from sentiment_lens.label.judges import Judge, register
 
 
 @register("mybackend")

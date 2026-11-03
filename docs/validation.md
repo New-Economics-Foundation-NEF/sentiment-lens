@@ -6,7 +6,7 @@ disagreements are settled, and how a labelling run is scored.
 
 ## The gold set
 
-The gold set is a sample of the corpus, coded by hand. Draw it with `ewl-validate sample` (see
+The gold set is a sample of the corpus, coded by hand. Draw it with `slens-validate sample` (see
 [The pipeline](pipeline.md#4-draw-the-gold-sample)). Each row has:
 
 | Column | Filled in by | Meaning |
@@ -34,11 +34,11 @@ If the gold set was assembled by hand (top-ups, replacement rows), recompute the
 against the final corpus before scoring:
 
 ```bash
-ewl-validate reweight gold.csv --master gold_sample.csv --topup gold_topup.csv \
+slens-validate reweight gold.csv --master gold_sample.csv --topup gold_topup.csv \
     --corpus master_kw_primary.csv --video-cap-fraction 0.15 --output gold_reweighted.csv
 ```
 
-`ewl-validate combine --corpus ...` does the same while it combines coders' files. A row that is
+`slens-validate combine --corpus ...` does the same while it combines coders' files. A row that is
 not in the final corpus is excluded and listed, never given a guessed probability.
 
 ## Agreement between coders
@@ -48,10 +48,10 @@ careful readers cannot agree, no classifier can be held to a higher standard.
 
 ```bash
 # two coders
-ewl-validate interrater coder_a.csv --second-input coder_b.csv --json-output interrater.json
+slens-validate interrater coder_a.csv --second-input coder_b.csv --json-output interrater.json
 
 # three or more coders, on the comments they all coded
-ewl-validate interrater coder_a.xlsx --second-input coder_b.xlsx --extra-inputs coder_c.xlsx \
+slens-validate interrater coder_a.xlsx --second-input coder_b.xlsx --extra-inputs coder_c.xlsx \
     --json-output interrater.json
 ```
 
@@ -82,16 +82,16 @@ intervals are wide: report the interval and the counts beside every figure.
 
 ## Settling disagreements
 
-`ewl-adjudicate` settles the comments that exactly three coders coded in common, by majority,
+`slens-adjudicate` settles the comments that exactly three coders coded in common, by majority,
 in two steps:
 
 ```bash
 # step 1: settle what the majority can, and write the rest to a review file
-ewl-adjudicate coder_a.xlsx coder_b.xlsx coder_c.xlsx --core-ids core_ids.csv \
+slens-adjudicate coder_a.xlsx coder_b.xlsx coder_c.xlsx --core-ids core_ids.csv \
     --review-output core_review.csv
 
 # step 2: after filling in hand_domain / hand_sentiment for the flagged rows
-ewl-adjudicate coder_a.xlsx coder_b.xlsx coder_c.xlsx --core-ids core_ids.csv \
+slens-adjudicate coder_a.xlsx coder_b.xlsx coder_c.xlsx --core-ids core_ids.csv \
     --decisions core_review.csv --output core_adjudicated.csv \
     --gold gold.csv --gold-output gold_adjudicated.csv
 ```
@@ -109,7 +109,7 @@ ewl-adjudicate coder_a.xlsx coder_b.xlsx coder_c.xlsx --core-ids core_ids.csv \
 Report the agreement figures from the original files, and say how many comments the majority
 settled and how many a person decided.
 
-`ewl-validate combine` then builds one gold file from every coder's file, the split manifest
+`slens-validate combine` then builds one gold file from every coder's file, the split manifest
 and the drawn sample (`--coders`, `--manifest`, `--master`, optionally `--adjudicated`,
 `--topup`, `--replacements`, `--corpus`).
 
@@ -121,51 +121,51 @@ The simplest route is to label the gold file itself, with the same judge, scorer
 examples and switches as the corpus run, into its own output:
 
 ```bash
-ewl-classify gold.csv --judge <same> --sentiment <same> --selector fixed \
+slens-classify gold.csv --judge <same> --sentiment <same> --selector fixed \
     --fixed-examples official-data/fixed_examples.csv --votes <same> \
     --cache official-data/judge_cache.jsonl --output official-data/gold_labelled.csv
 ```
 
-If the gold comments are inside the labelled corpus, `ewl-validate join` copies their machine
+If the gold comments are inside the labelled corpus, `slens-validate join` copies their machine
 labels across instead:
 
 ```bash
-ewl-validate join gold.csv --labelled master_labelled.csv --output scored.csv
+slens-validate join gold.csv --labelled master_labelled.csv --output scored.csv
 ```
 
 `join` refuses when any coded comment is missing from `--labelled` (`--allow-partial` accepts
 that, and the missing rows are then left out of scoring, not counted as misses).
 
-### `ewl-validate score`
+### `slens-validate score`
 
 ```bash
-ewl-validate score official-data/gold_labelled.csv
+slens-validate score official-data/gold_labelled.csv
 ```
 
 It prints weighted precision, recall and F1 for each category. Rows the model could not parse
 are left out (a parse failure is not an answer), as are rows with no machine label and rows
 with a blank `hand_domain`, and the counts are printed. If there are no `domain_*` columns, it
-scores the `kw_*` columns from `ewl-keywords` instead.
+scores the `kw_*` columns from `slens-keywords` instead.
 
 ### Worked examples are left out
 
 A comment shown to the model as a worked example would be scored against its own label.
-`ewl-validate score` and `ewl-report` read the example ids from the gold file's run record
+`slens-validate score` and `slens-report` read the example ids from the gold file's run record
 (`fixed_examples.ids`) and leave those rows out automatically. `--exclude-ids FILE` adds more
 (a list of ids, or any CSV with a `comment_id` column; the examples file works). When no
 example ids are known, and the built-in synthetic examples were not used, a warning says so;
 `--no-example-exclusion` silences it when no gold comment was shown as an example.
 
-### `ewl-evaluate`: compare arms
+### `slens-evaluate`: compare arms
 
-`ewl-evaluate` runs one or more arms directly on a hand-coded file and prints a scorecard.
+`slens-evaluate` runs one or more arms directly on a hand-coded file and prints a scorecard.
 
 ```bash
-ewl-evaluate scorecard gold_heldout.csv \
+slens-evaluate scorecard gold_heldout.csv \
     --arm keyword/none --arm anthropic:claude-haiku-4-5/fixed \
     --fixed-examples official-data/fixed_examples.csv --cache official-data/eval_cache.jsonl
 
-ewl-evaluate sentiment gold_heldout.csv \
+slens-evaluate sentiment gold_heldout.csv \
     --arm vader --arm llm:anthropic:claude-haiku-4-5 --cache official-data/eval_cache.jsonl
 ```
 
@@ -195,23 +195,23 @@ coded `irrelevant` or `uncodeable`.
 
 Other subcommands:
 
-- `ewl-evaluate split` divides a gold file into a retrieval pool and a held-out set
+- `slens-evaluate split` divides a gold file into a retrieval pool and a held-out set
   (`--split-by video` keeps each video on one side). Never let a held-out comment enter the
   pool.
-- `ewl-evaluate score` scores one `--judge`.
+- `slens-evaluate score` scores one `--judge`.
 
 `--concurrency N` on `scorecard`, `sentiment` and `score` labels N comments at once; results
 match a serial run.
 
 ### Other checks
 
-- `ewl-validate agree FILE` gives per-category kappa between the model (`domain_*`) and the
+- `slens-validate agree FILE` gives per-category kappa between the model (`domain_*`) and the
   keyword matcher (`kw_*`) on a labelled corpus: a cheap triage signal, not a score.
-- `ewl-validate selfconsistency FILE` measures how far a model agrees with itself across votes
+- `slens-validate selfconsistency FILE` measures how far a model agrees with itself across votes
   (it needs a run with `--votes 2` or more), as a kappa that can be read beside the coders'
   kappa. `--core-ids` restricts it to the comments the coders shared; `--compare-json` prints
   it beside an `interrater` JSON file.
-- `ewl-agreement --model a=gold_a.csv --model b=gold_b.csv ...` treats each model and the hand
+- `slens-agreement --model a=gold_a.csv --model b=gold_b.csv ...` treats each model and the hand
   codes as raters on the same gold comments, and prints pairwise kappa, Krippendorff's alpha
   with and without the hand codes, and "consensus errors" (all models agree with each other and
   disagree with the hand codes). These figures are unweighted. Models can share mistakes, so

@@ -6,19 +6,19 @@ This page is generated from each command's `--help` output by `docs/gen_cli.py`.
 
 Every command also runs as `python -m <module>`; the module for each is in `[project.scripts]` in `pyproject.toml`.
 
-## `ewl-collect`
+## `slens-collect`
 
 Collect comments from YouTube videos into the shared CSV schema.
 
 ```text
-usage: ewl-collect [-h] --story STORY [--search QUERY] [--top-n TOP_N]
-                   [--target-videos TARGET_VIDEOS] [--drop-non-lang]
-                   [--max-shorts-seconds MAX_SHORTS_SECONDS] [--min-comments MIN_COMMENTS]
-                   [--seed SEED] [--limit LIMIT] [--max-search-pages MAX_SEARCH_PAGES]
-                   [--order {relevance,time}] [--lang LANG] [--output OUTPUT]
-                   [--video-list-output VIDEO_LIST_OUTPUT]
-                   [--exclusion-table-output EXCLUSION_TABLE_OUTPUT]
-                   [urls ...]
+usage: slens-collect [-h] --story STORY [--search QUERY] [--top-n TOP_N]
+                     [--target-videos TARGET_VIDEOS] [--drop-non-lang]
+                     [--max-shorts-seconds MAX_SHORTS_SECONDS] [--min-comments MIN_COMMENTS]
+                     [--seed SEED] [--limit LIMIT] [--max-search-pages MAX_SEARCH_PAGES]
+                     [--order {relevance,time}] [--lang LANG] [--output OUTPUT]
+                     [--video-list-output VIDEO_LIST_OUTPUT]
+                     [--exclusion-table-output EXCLUSION_TABLE_OUTPUT]
+                     [urls ...]
 
 positional arguments:
   urls                  One or more video URLs (preferred)
@@ -93,20 +93,20 @@ options:
                         filtering stage) to this CSV, alongside printing it to stderr.
 ```
 
-## `ewl-collect-full-corpus`
+## `slens-collect-full-corpus`
 
 Collect comments from YouTube videos into the shared CSV schema.
 
 ```text
-usage: ewl-collect-full-corpus [-h] --story STORY [--search QUERY] [--top-n TOP_N]
-                               [--target-videos TARGET_VIDEOS] [--drop-non-lang]
-                               [--max-shorts-seconds MAX_SHORTS_SECONDS]
-                               [--min-comments MIN_COMMENTS] [--seed SEED] [--limit LIMIT]
-                               [--max-search-pages MAX_SEARCH_PAGES] [--order {relevance,time}]
-                               [--lang LANG] [--output OUTPUT]
-                               [--video-list-output VIDEO_LIST_OUTPUT]
-                               [--exclusion-table-output EXCLUSION_TABLE_OUTPUT]
-                               [urls ...]
+usage: slens-collect-full-corpus [-h] --story STORY [--search QUERY] [--top-n TOP_N]
+                                 [--target-videos TARGET_VIDEOS] [--drop-non-lang]
+                                 [--max-shorts-seconds MAX_SHORTS_SECONDS]
+                                 [--min-comments MIN_COMMENTS] [--seed SEED] [--limit LIMIT]
+                                 [--max-search-pages MAX_SEARCH_PAGES] [--order {relevance,time}]
+                                 [--lang LANG] [--output OUTPUT]
+                                 [--video-list-output VIDEO_LIST_OUTPUT]
+                                 [--exclusion-table-output EXCLUSION_TABLE_OUTPUT]
+                                 [urls ...]
 
 positional arguments:
   urls                  One or more video URLs (preferred)
@@ -181,14 +181,14 @@ options:
                         filtering stage) to this CSV, alongside printing it to stderr.
 ```
 
-## `ewl-merge`
+## `slens-merge`
 
 Concatenate per-video/per-thread collector CSVs into one master file.
 
 ```text
-usage: ewl-merge [-h] --output OUTPUT [--no-manifest] [--cap-scope {global,story}]
-                 [--cap-per-author CAP_PER_AUTHOR] [--dedupe-bodies]
-                 inputs [inputs ...]
+usage: slens-merge [-h] --output OUTPUT [--no-manifest] [--cap-scope {global,story}]
+                   [--cap-per-author CAP_PER_AUTHOR] [--dedupe-bodies]
+                   inputs [inputs ...]
 
 positional arguments:
   inputs                Per-video/per-thread CSVs to combine
@@ -204,20 +204,20 @@ options:
                         'story' makes the result independent of merge order.
   --cap-per-author CAP_PER_AUTHOR
                         Keep at most this many comments per author_hash (see cap_per_author's
-                        docstring for why). Off by default: a plain `ewl-merge` with no flags
+                        docstring for why). Off by default: a plain `slens-merge` with no flags
                         reproduces exactly what it always did.
   --dedupe-bodies       Also drop rows whose comment body duplicates an earlier one IN THE SAME
                         STORY (see drop_duplicate_bodies's docstring). Off by default, same
                         reasoning as --cap-per-author.
 ```
 
-## `ewl-clean-videos`
+## `slens-clean-videos`
 
 Drop every comment belonging to a named list of videos from a collected comments CSV, before merging.
 
 ```text
-usage: ewl-clean-videos [-h] [--exclude EXCLUDE] [--exclude-file EXCLUDE_FILE] --output OUTPUT
-                        input_csv
+usage: slens-clean-videos [-h] [--exclude EXCLUDE] [--exclude-file EXCLUDE_FILE] --output OUTPUT
+                          input_csv
 
 positional arguments:
   input_csv
@@ -230,14 +230,14 @@ options:
   --output OUTPUT
 ```
 
-## `ewl-redact`
+## `slens-redact`
 
 Find, and optionally remove, personal identifiers in comment text.
 
 ```text
-usage: ewl-redact [-h] [--output OUTPUT] [--column COLUMN] [--handles {keep,leading,all}]
-                  [--handle-token HANDLE_TOKEN] [--emails] [--phones]
-                  input_csv
+usage: slens-redact [-h] [--output OUTPUT] [--column COLUMN] [--handles {keep,leading,all}]
+                    [--handle-token HANDLE_TOKEN] [--emails] [--phones]
+                    input_csv
 
 positional arguments:
   input_csv
@@ -252,18 +252,18 @@ options:
   --phones
 ```
 
-## `ewl-gemma`
+## `slens-gemma`
 
 Label comments for harm domain AND sentiment with one model only: Gemma 2 27B Instruct (Q4_0), run locally through Ollama. Nothing leaves the machine.
 
 ```text
-usage: ewl-gemma [-h] [--output OUTPUT] [--check] [--sample N] [--seed SEED] [--limit LIMIT]
-                 [--project-to N] [--cache CACHE] [--no-cache] [--keep-empty-cached-replies]
-                 [--fixed-examples FILE] [--story-rules {on,off}]
-                 [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
-                 [--domain-context {facts,none}] [--combined-domain-context {keep,remove}]
-                 [--host HOST]
-                 [input_csv]
+usage: slens-gemma [-h] [--output OUTPUT] [--check] [--sample N] [--seed SEED] [--limit LIMIT]
+                   [--project-to N] [--cache CACHE] [--no-cache] [--keep-empty-cached-replies]
+                   [--fixed-examples FILE] [--story-rules {on,off}]
+                   [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
+                   [--domain-context {facts,none}] [--combined-domain-context {keep,remove}]
+                   [--host HOST]
+                   [input_csv]
 
 positional arguments:
   input_csv             A CSV with a `body` column (and `story`).
@@ -311,12 +311,12 @@ instrument switches (defaults reproduce the current wording):
                         remove = the combined arm's domain question does not see the story context
 ```
 
-## `ewl-batches`
+## `slens-batches`
 
 Split a corpus into batches for a slow local model, and check the labelled batches came back complete and consistent before joining them.
 
 ```text
-usage: ewl-batches [-h] {prepare,verify,split,status,commands,check} ...
+usage: slens-batches [-h] {prepare,verify,split,status,commands,check} ...
 
 positional arguments:
   {prepare,verify,split,status,commands,check}
@@ -326,17 +326,17 @@ positional arguments:
                         with every text unchanged
     split               cut a corpus into batches
     status              which batches are done, pending or need attention
-    commands            print the ewl-gemma command for every pending batch
+    commands            print the slens-gemma command for every pending batch
     check               verify finished batches; optionally join them
 
 options:
   -h, --help            show this help message and exit
 ```
 
-### `ewl-batches prepare`
+### `slens-batches prepare`
 
 ```text
-usage: ewl-batches prepare [-h] --exclude FILE --output OUTPUT full_csv
+usage: slens-batches prepare [-h] --exclude FILE --output OUTPUT full_csv
 
 positional arguments:
   full_csv
@@ -347,10 +347,10 @@ options:
   --output OUTPUT
 ```
 
-### `ewl-batches verify`
+### `slens-batches verify`
 
 ```text
-usage: ewl-batches verify [-h] --full FULL [--exclude FILE] input_csv
+usage: slens-batches verify [-h] --full FULL [--exclude FILE] input_csv
 
 positional arguments:
   input_csv
@@ -361,12 +361,12 @@ options:
   --exclude FILE
 ```
 
-### `ewl-batches split`
+### `slens-batches split`
 
 ```text
-usage: ewl-batches split [-h] [--full FILE] [--exclude FILE] --out-dir OUT_DIR
-                         [--batch-size BATCH_SIZE] [--shuffle-seed SHUFFLE_SEED] [--no-shuffle]
-                         input_csv
+usage: slens-batches split [-h] [--full FILE] [--exclude FILE] --out-dir OUT_DIR
+                           [--batch-size BATCH_SIZE] [--shuffle-seed SHUFFLE_SEED] [--no-shuffle]
+                           input_csv
 
 positional arguments:
   input_csv
@@ -385,10 +385,10 @@ options:
   --no-shuffle          keep the corpus file's order (batches are then contiguous slices)
 ```
 
-### `ewl-batches status`
+### `slens-batches status`
 
 ```text
-usage: ewl-batches status [-h] out_dir
+usage: slens-batches status [-h] out_dir
 
 positional arguments:
   out_dir
@@ -397,10 +397,10 @@ options:
   -h, --help  show this help message and exit
 ```
 
-### `ewl-batches commands`
+### `slens-batches commands`
 
 ```text
-usage: ewl-batches commands [-h] [--extra EXTRA] [--cache CACHE] [--first N] out_dir
+usage: slens-batches commands [-h] [--extra EXTRA] [--cache CACHE] [--first N] out_dir
 
 positional arguments:
   out_dir
@@ -413,10 +413,10 @@ options:
                  5); run again later for the next N
 ```
 
-### `ewl-batches check`
+### `slens-batches check`
 
 ```text
-usage: ewl-batches check [-h] [--merge-to FILE] [--partial] out_dir
+usage: slens-batches check [-h] [--merge-to FILE] [--partial] out_dir
 
 positional arguments:
   out_dir
@@ -428,12 +428,12 @@ options:
                    whose run record is marked partial (never the whole corpus)
 ```
 
-## `ewl-anthropic-batch`
+## `slens-anthropic-batch`
 
 Label a corpus with Claude through Anthropic's Message Batches API (half price, slower).
 
 ```text
-usage: ewl-anthropic-batch [-h] {plan,submit,status,fetch,replay,compare} ...
+usage: slens-anthropic-batch [-h] {plan,submit,status,fetch,replay,compare} ...
 
 positional arguments:
   {plan,submit,status,fetch,replay,compare}
@@ -448,19 +448,19 @@ options:
   -h, --help            show this help message and exit
 ```
 
-### `ewl-anthropic-batch plan`
+### `slens-anthropic-batch plan`
 
 ```text
-usage: ewl-anthropic-batch plan [-h] [--out-dir OUT_DIR] [--judge JUDGE] [--sentiment SENTIMENT]
-                                [--votes VOTES] [--ttl {5m,1h}] [--cache CACHE] [--sample N]
-                                [--seed SEED] [--limit LIMIT]
-                                [--max-batch-requests MAX_BATCH_REQUESTS]
-                                [--max-batch-mb MAX_BATCH_MB] [--retry-uncacheable]
-                                [--fixed-examples FILE] [--story-rules {on,off}]
-                                [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
-                                [--domain-context {facts,none}]
-                                [--combined-domain-context {keep,remove}]
-                                input_csv
+usage: slens-anthropic-batch plan [-h] [--out-dir OUT_DIR] [--judge JUDGE] [--sentiment SENTIMENT]
+                                  [--votes VOTES] [--ttl {5m,1h}] [--cache CACHE] [--sample N]
+                                  [--seed SEED] [--limit LIMIT]
+                                  [--max-batch-requests MAX_BATCH_REQUESTS]
+                                  [--max-batch-mb MAX_BATCH_MB] [--retry-uncacheable]
+                                  [--fixed-examples FILE] [--story-rules {on,off}]
+                                  [--stance-object {conduct,wealth}]
+                                  [--sentiment-examples {on,off}] [--domain-context {facts,none}]
+                                  [--combined-domain-context {keep,remove}]
+                                  input_csv
 
 positional arguments:
   input_csv
@@ -510,19 +510,20 @@ instrument switches (defaults reproduce the current wording):
                         remove = the combined arm's domain question does not see the story context
 ```
 
-### `ewl-anthropic-batch submit`
+### `slens-anthropic-batch submit`
 
 ```text
-usage: ewl-anthropic-batch submit [-h] --out-dir OUT_DIR [--max-cost USD] [--judge JUDGE]
-                                  [--sentiment SENTIMENT] [--votes VOTES] [--ttl {5m,1h}]
-                                  [--cache CACHE] [--sample N] [--seed SEED] [--limit LIMIT]
-                                  [--max-batch-requests MAX_BATCH_REQUESTS]
-                                  [--max-batch-mb MAX_BATCH_MB] [--retry-uncacheable]
-                                  [--fixed-examples FILE] [--story-rules {on,off}]
-                                  [--stance-object {conduct,wealth}]
-                                  [--sentiment-examples {on,off}] [--domain-context {facts,none}]
-                                  [--combined-domain-context {keep,remove}]
-                                  input_csv
+usage: slens-anthropic-batch submit [-h] --out-dir OUT_DIR [--max-cost USD] [--judge JUDGE]
+                                    [--sentiment SENTIMENT] [--votes VOTES] [--ttl {5m,1h}]
+                                    [--cache CACHE] [--sample N] [--seed SEED] [--limit LIMIT]
+                                    [--max-batch-requests MAX_BATCH_REQUESTS]
+                                    [--max-batch-mb MAX_BATCH_MB] [--retry-uncacheable]
+                                    [--fixed-examples FILE] [--story-rules {on,off}]
+                                    [--stance-object {conduct,wealth}]
+                                    [--sentiment-examples {on,off}]
+                                    [--domain-context {facts,none}]
+                                    [--combined-domain-context {keep,remove}]
+                                    input_csv
 
 positional arguments:
   input_csv
@@ -575,10 +576,10 @@ instrument switches (defaults reproduce the current wording):
                         remove = the combined arm's domain question does not see the story context
 ```
 
-### `ewl-anthropic-batch status`
+### `slens-anthropic-batch status`
 
 ```text
-usage: ewl-anthropic-batch status [-h] [--check-cache] out_dir
+usage: slens-anthropic-batch status [-h] [--check-cache] out_dir
 
 positional arguments:
   out_dir
@@ -588,10 +589,10 @@ options:
   --check-cache
 ```
 
-### `ewl-anthropic-batch fetch`
+### `slens-anthropic-batch fetch`
 
 ```text
-usage: ewl-anthropic-batch fetch [-h] [--refetch] [--abandon BATCH_ID] [--cancel] out_dir
+usage: slens-anthropic-batch fetch [-h] [--refetch] [--abandon BATCH_ID] [--cancel] out_dir
 
 positional arguments:
   out_dir
@@ -605,10 +606,10 @@ options:
   --cancel            with --abandon on a batch still running: cancel it instead
 ```
 
-### `ewl-anthropic-batch replay`
+### `slens-anthropic-batch replay`
 
 ```text
-usage: ewl-anthropic-batch replay [-h] --output OUTPUT [--partial] out_dir
+usage: slens-anthropic-batch replay [-h] --output OUTPUT [--partial] out_dir
 
 positional arguments:
   out_dir
@@ -619,10 +620,10 @@ options:
   --partial        write the complete comments even if some are missing a reply
 ```
 
-### `ewl-anthropic-batch compare`
+### `slens-anthropic-batch compare`
 
 ```text
-usage: ewl-anthropic-batch compare [-h] file_a file_b
+usage: slens-anthropic-batch compare [-h] file_a file_b
 
 positional arguments:
   file_a
@@ -632,12 +633,12 @@ options:
   -h, --help  show this help message and exit
 ```
 
-## `ewl-primary-category`
+## `slens-primary-category`
 
-Add a `primary_category` column to a keyword-labelled corpus, for use as a gold-set stratification key: `ewl-validate sample --stratify-by story,primary_category`.
+Add a `primary_category` column to a keyword-labelled corpus, for use as a gold-set stratification key: `slens-validate sample --stratify-by story,primary_category`.
 
 ```text
-usage: ewl-primary-category [-h] --output OUTPUT input_csv
+usage: slens-primary-category [-h] --output OUTPUT input_csv
 
 positional arguments:
   input_csv
@@ -647,16 +648,16 @@ options:
   --output OUTPUT
 ```
 
-## `ewl-adjudicate`
+## `slens-adjudicate`
 
 Adjudicate comments coded by exactly three coders, by majority; flag what the majority cannot settle.
 
 ```text
-usage: ewl-adjudicate [-h] --core-ids CORE_IDS [--review-output REVIEW_OUTPUT]
-                      [--decisions DECISIONS] [--output OUTPUT] [--gold GOLD]
-                      [--gold-output GOLD_OUTPUT] [--sentiment-rule {bucket,exact}]
-                      [--extra-labels {add,ignore}]
-                      inputs [inputs ...]
+usage: slens-adjudicate [-h] --core-ids CORE_IDS [--review-output REVIEW_OUTPUT]
+                        [--decisions DECISIONS] [--output OUTPUT] [--gold GOLD]
+                        [--gold-output GOLD_OUTPUT] [--sentiment-rule {bucket,exact}]
+                        [--extra-labels {add,ignore}]
+                        inputs [inputs ...]
 
 positional arguments:
   inputs                each coder's ORIGINAL completed file (.xlsx or .csv), exactly three
@@ -671,7 +672,7 @@ options:
                         step 2: the review file with hand_domain and hand_sentiment filled in for
                         the flagged rows
   --output OUTPUT       the resolved core rows (comment_id, hand_domain, hand_sentiment, ...);
-                        written only when nothing remains flagged. `ewl-validate combine
+                        written only when nothing remains flagged. `slens-validate combine
                         --adjudicated` reads this
   --gold GOLD           a gold file to copy with the adjudicated labels put in
   --gold-output GOLD_OUTPUT
@@ -682,20 +683,20 @@ options:
                         is added beside the majority label when that makes at most two labels
 ```
 
-## `ewl-classify`
+## `slens-classify`
 
 Label each comment with a sentiment score and an LLM harm domain.
 
 ```text
-usage: ewl-classify [-h] [--judge JUDGE] [--selector SELECTOR] [--pool POOL] [--k K] [--seed SEED]
-                    [--votes VOTES] [--fuzzy] [--cache-only] [--keep-empty-cached-replies]
-                    [--cache CACHE] [--no-cache] [--label-column LABEL_COLUMN]
-                    [--concurrency CONCURRENCY] [--strict-corpus] [--limit LIMIT] [--max-cost USD]
-                    [--project-to N] [--sentiment SENTIMENT] [--output OUTPUT]
-                    [--fixed-examples FILE] [--story-rules {on,off}]
-                    [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
-                    [--domain-context {facts,none}] [--combined-domain-context {keep,remove}]
-                    input_csv
+usage: slens-classify [-h] [--judge JUDGE] [--selector SELECTOR] [--pool POOL] [--k K]
+                      [--seed SEED] [--votes VOTES] [--fuzzy] [--cache-only]
+                      [--keep-empty-cached-replies] [--cache CACHE] [--no-cache]
+                      [--label-column LABEL_COLUMN] [--concurrency CONCURRENCY] [--strict-corpus]
+                      [--limit LIMIT] [--max-cost USD] [--project-to N] [--sentiment SENTIMENT]
+                      [--output OUTPUT] [--fixed-examples FILE] [--story-rules {on,off}]
+                      [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
+                      [--domain-context {facts,none}] [--combined-domain-context {keep,remove}]
+                      input_csv
 
 positional arguments:
   input_csv
@@ -714,7 +715,7 @@ options:
   --votes VOTES         Samples per comment; labels need a majority to be kept.
   --fuzzy               Restore the old behaviour of fuzzy-matching off-list answers.
   --cache-only          Never call the model: use only replies already in --cache, and stop at the
-                        first comment that has none. For replaying answers collected by ewl-
+                        first comment that has none. For replaying answers collected by slens-
                         anthropic-batch, so a gap can never become a full-price call.
   --keep-empty-cached-replies
                         Proceed although the cache holds empty replies (default: refuse).
@@ -732,7 +733,7 @@ options:
                         votes is ~33h sequentially and roughly 33/N with --concurrency N. Output
                         row order is unchanged. Keep it at 1 for a local ollama judge, which is
                         compute-bound rather than network-bound and gains nothing.
-  --strict-corpus       Refuse to run if the corpus no longer matches the manifest ewl-merge
+  --strict-corpus       Refuse to run if the corpus no longer matches the manifest slens-merge
                         wrote. Worth setting for any run whose labels get quoted: a corpus that
                         changed after a figure was produced means the figure refers to data that
                         no longer exists.
@@ -779,13 +780,13 @@ instrument switches (defaults reproduce the current wording):
                         remove = the combined arm's domain question does not see the story context
 ```
 
-## `ewl-keywords`
+## `slens-keywords`
 
 Deterministic harm-domain classifier, as a check on the LLM labels.
 
 ```text
-usage: ewl-keywords [-h] [--keywords KEYWORDS] [--audit] [--min-hits MIN_HITS] [--output OUTPUT]
-                    input_csv
+usage: slens-keywords [-h] [--keywords KEYWORDS] [--audit] [--min-hits MIN_HITS] [--output OUTPUT]
+                      input_csv
 
 positional arguments:
   input_csv
@@ -801,20 +802,20 @@ options:
                        redirection still re-encodes as UTF-16, so prefer --output there.
 ```
 
-## `ewl-evaluate`
+## `slens-evaluate`
 
 Score classifier arms against a hand-coded gold set and print the scorecard.
 
 ```text
-usage: ewl-evaluate [-h] [--judge JUDGE] [--arm ARM] [--pool POOL] [--selector SELECTOR]
-                    [--allow-non-fixed] [--k K] [--votes VOTES] [--concurrency CONCURRENCY]
-                    [--label-column LABEL_COLUMN] [--cache CACHE] [--pool-fraction POOL_FRACTION]
-                    [--out-prefix OUT_PREFIX] [--seed SEED] [--exclude-ids EXCLUDE_IDS]
-                    [--bootstrap N] [--split-by {comment,video}] [--fixed-examples FILE]
-                    [--story-rules {on,off}] [--stance-object {conduct,wealth}]
-                    [--sentiment-examples {on,off}] [--domain-context {facts,none}]
-                    [--combined-domain-context {keep,remove}]
-                    {split,score,scorecard,sentiment} input_csv
+usage: slens-evaluate [-h] [--judge JUDGE] [--arm ARM] [--pool POOL] [--selector SELECTOR]
+                      [--allow-non-fixed] [--k K] [--votes VOTES] [--concurrency CONCURRENCY]
+                      [--label-column LABEL_COLUMN] [--cache CACHE]
+                      [--pool-fraction POOL_FRACTION] [--out-prefix OUT_PREFIX] [--seed SEED]
+                      [--exclude-ids EXCLUDE_IDS] [--bootstrap N] [--split-by {comment,video}]
+                      [--fixed-examples FILE] [--story-rules {on,off}]
+                      [--stance-object {conduct,wealth}] [--sentiment-examples {on,off}]
+                      [--domain-context {facts,none}] [--combined-domain-context {keep,remove}]
+                      {split,score,scorecard,sentiment} input_csv
 
 positional arguments:
   {split,score,scorecard,sentiment}
@@ -884,12 +885,12 @@ instrument switches (defaults reproduce the current wording):
                         remove = the combined arm's domain question does not see the story context
 ```
 
-## `ewl-agreement`
+## `slens-agreement`
 
 Pairwise kappa and Krippendorff's alpha between models and the hand codes, on the gold set (counts and statistics only).
 
 ```text
-usage: ewl-agreement [-h] --model NAME=FILE [--no-gold] [--bootstrap BOOTSTRAP]
+usage: slens-agreement [-h] --model NAME=FILE [--no-gold] [--bootstrap BOOTSTRAP]
 
 options:
   -h, --help            show this help message and exit
@@ -899,23 +900,23 @@ options:
                         resamples for the interval
 ```
 
-## `ewl-validate`
+## `slens-validate`
 
 Compare harm labels across methods and draw a hand-coding sample.
 
 ```text
-usage: ewl-validate [-h] [--coders CODERS [CODERS ...]] [--manifest MANIFEST] [--master MASTER]
-                    [--replacements REPLACEMENTS] [--topup TOPUP]
-                    [--sentiment-agreement {exact,bucket}] [--adjudicated ADJUDICATED]
-                    [--corpus CORPUS] [--json-output JSON_OUTPUT] [--second-input SECOND_INPUT]
-                    [--sentiment-levels {scale,buckets}]
-                    [--extra-inputs EXTRA_INPUTS [EXTRA_INPUTS ...]] [--exclude-ids EXCLUDE_IDS]
-                    [--allow-partial] [--no-example-exclusion] [--core-ids CORE_IDS]
-                    [--compare-json COMPARE_JSON] [--labelled LABELLED] [--n N] [--seed SEED]
-                    [--stratify-by STRATIFY_BY] [--output OUTPUT]
-                    [--video-cap-fraction VIDEO_CAP_FRACTION]
-                    {agree,sample,score,join,interrater,combine,selfconsistency,reweight}
-                    [input_csv]
+usage: slens-validate [-h] [--coders CODERS [CODERS ...]] [--manifest MANIFEST] [--master MASTER]
+                      [--replacements REPLACEMENTS] [--topup TOPUP]
+                      [--sentiment-agreement {exact,bucket}] [--adjudicated ADJUDICATED]
+                      [--corpus CORPUS] [--json-output JSON_OUTPUT] [--second-input SECOND_INPUT]
+                      [--sentiment-levels {scale,buckets}]
+                      [--extra-inputs EXTRA_INPUTS [EXTRA_INPUTS ...]] [--exclude-ids EXCLUDE_IDS]
+                      [--allow-partial] [--no-example-exclusion] [--core-ids CORE_IDS]
+                      [--compare-json COMPARE_JSON] [--labelled LABELLED] [--n N] [--seed SEED]
+                      [--stratify-by STRATIFY_BY] [--output OUTPUT]
+                      [--video-cap-fraction VIDEO_CAP_FRACTION]
+                      {agree,sample,score,join,interrater,combine,selfconsistency,reweight}
+                      [input_csv]
 
 positional arguments:
   {agree,sample,score,join,interrater,combine,selfconsistency,reweight}
@@ -990,7 +991,7 @@ options:
                         different, much larger set that isn't a fair comparison. Omit to measure
                         over every row in input_csv instead.
   --compare-json COMPARE_JSON
-                        `selfconsistency` only: a prior `ewl-validate interrater --json-output
+                        `selfconsistency` only: a prior `slens-validate interrater --json-output
                         ...` run's file, printed alongside this run's figures for a direct side-
                         by-side instead of two outputs to reconcile by eye.
   --labelled LABELLED   `join` only: the labelled corpus to take the machine labels from, matched
@@ -1018,21 +1019,21 @@ options:
                         depends on. Omit for the old uncapped behaviour.
 ```
 
-## `ewl-report`
+## `slens-report`
 
 Confidence intervals for classified proportions, via bootstrap resampling.
 
 ```text
-usage: ewl-report [-h] [--strict-corpus] --column COLUMN [--by BY] [--cluster-by CLUSTER_BY]
-                  [--tpr TPR] [--fpr FPR] [--base {all,classified,both}]
-                  [--rescale-unclassified FROZEN_CORPUS] [--exclude-ids FILE]
-                  [--no-example-exclusion] [--n-boot N_BOOT] [--seed SEED] [--gold GOLD]
-                  [--gold-label-column GOLD_LABEL_COLUMN] [--category CATEGORY]
-                  [--min-genuine-positives MIN_GENUINE_POSITIVES]
-                  [--max-discard-fraction MAX_DISCARD_FRACTION]
-                  [--min-gold-clusters MIN_GOLD_CLUSTERS]
-                  {observed,aggregate,corrected,corrected-bootstrap,ppi-bootstrap,corrected-by-story}
-                  input_csv
+usage: slens-report [-h] [--strict-corpus] --column COLUMN [--by BY] [--cluster-by CLUSTER_BY]
+                    [--tpr TPR] [--fpr FPR] [--base {all,classified,both}]
+                    [--rescale-unclassified FROZEN_CORPUS] [--exclude-ids FILE]
+                    [--no-example-exclusion] [--n-boot N_BOOT] [--seed SEED] [--gold GOLD]
+                    [--gold-label-column GOLD_LABEL_COLUMN] [--category CATEGORY]
+                    [--min-genuine-positives MIN_GENUINE_POSITIVES]
+                    [--max-discard-fraction MAX_DISCARD_FRACTION]
+                    [--min-gold-clusters MIN_GOLD_CLUSTERS]
+                    {observed,aggregate,corrected,corrected-bootstrap,ppi-bootstrap,corrected-by-story}
+                    input_csv
 
 positional arguments:
   {observed,aggregate,corrected,corrected-bootstrap,ppi-bootstrap,corrected-by-story}
@@ -1074,8 +1075,8 @@ options:
   --n-boot N_BOOT
   --seed SEED
   --gold GOLD           corrected-bootstrap: a gold CSV carrying both the machine labels
-                        (domain_*) and the hand codes -- i.e. one that has been through ewl-
-                        classify, not the blind file ewl-validate sample produces
+                        (domain_*) and the hand codes -- i.e. one that has been through slens-
+                        classify, not the blind file slens-validate sample produces
   --gold-label-column GOLD_LABEL_COLUMN
                         corrected-bootstrap: the hand-coded column in --gold (default hand_domain)
   --category CATEGORY   corrected-bootstrap: the harm category, e.g. democracy. Defaults to
@@ -1096,21 +1097,21 @@ options:
                         report a zero-width interval
 ```
 
-## `ewl-export-dashboard`
+## `slens-export-dashboard`
 
 Build the single JSON file the QA dashboard reads.
 
 ```text
-usage: ewl-export-dashboard [-h] --output OUTPUT [--exclude-ids FILE] [--scored SCORED]
-                            [--exclusions EXCLUSIONS] [--video-list VIDEO_LIST]
-                            [--interrater INTERRATER] [--cluster-by CLUSTER_BY] [--n-boot N_BOOT]
-                            [--allow-unvalidated] [--run-record FILE]
-                            [--allow-instrument-mismatch] [--corpus CORPUS] [--include-verbatim]
-                            [--status {provisional,validated}]
-                            labelled_csv
+usage: slens-export-dashboard [-h] --output OUTPUT [--exclude-ids FILE] [--scored SCORED]
+                              [--exclusions EXCLUSIONS] [--video-list VIDEO_LIST]
+                              [--interrater INTERRATER] [--cluster-by CLUSTER_BY]
+                              [--n-boot N_BOOT] [--allow-unvalidated] [--run-record FILE]
+                              [--allow-instrument-mismatch] [--corpus CORPUS] [--include-verbatim]
+                              [--status {provisional,validated}]
+                              labelled_csv
 
 positional arguments:
-  labelled_csv          A corpus that has been through ewl-classify
+  labelled_csv          A corpus that has been through slens-classify
 
 options:
   -h, --help            show this help message and exit
@@ -1120,9 +1121,9 @@ options:
                         record lists as fixed examples are left out automatically.
   --scored SCORED       Hand-coded rows joined to their machine labels, for the validation tab
   --exclusions EXCLUSIONS
-                        The exclusion table ewl-collect wrote
+                        The exclusion table slens-collect wrote
   --video-list VIDEO_LIST
-                        The video list ewl-collect wrote
+                        The video list slens-collect wrote
   --interrater INTERRATER
                         JSON from a coder-agreement run, if you have one
   --cluster-by CLUSTER_BY
@@ -1133,7 +1134,7 @@ options:
                         tab -- these are the numbers of a classifier nobody has checked, which is
                         not the same as a result.
   --run-record FILE     The run record (.run.json) for the labelled file, when it is not at
-                        <labelled_csv>.run.json -- e.g. after the file was renamed. ewl-keywords
+                        <labelled_csv>.run.json -- e.g. after the file was renamed. slens-keywords
                         copies the record beside its output, so the classify -> keywords -> export
                         chain finds it without this.
   --allow-instrument-mismatch
