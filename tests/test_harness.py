@@ -22,22 +22,22 @@ import os
 # starts from the root, whatever directory it was launched in.
 os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 
-# ewl_common.hash_author() refuses to hash anything without a real salt (a
+# sentiment_lens.common.hash_author() refuses to hash anything without a real salt (a
 # GDPR safeguard: usernames must never be hashed with a repo-shipped default).
-# ewl_common reads EWL_AUTHOR_SALT once, at import time, into a module-level
-# variable -- and merge.py (imported below) pulls ewl_common in immediately.
+# sentiment_lens.common reads SLENS_AUTHOR_SALT once, at import time, into a module-level
+# variable -- and merge.py (imported below) pulls sentiment_lens.common in immediately.
 # So this must be set before any import below, not just before the test that
 # needs it, or a later os.environ assignment is too late to matter. This is a
 # harness-only value, never used to hash anything real.
 # An EMPTY value counts as unset: setdefault left "" in place, and the harness then
 # failed on the first thing that hashed a name.
-if not os.environ.get("EWL_AUTHOR_SALT"):
-    os.environ["EWL_AUTHOR_SALT"] = "test-harness-only-salt-do-not-use-for-real-data"
+if not os.environ.get("SLENS_AUTHOR_SALT"):
+    os.environ["SLENS_AUTHOR_SALT"] = "test-harness-only-salt-do-not-use-for-real-data"
 
 # The OpenAI and Google judges refuse to be built unless the provider is listed here (a
 # data-protection gate). The harness uses fake clients and sends nothing anywhere, so it
 # approves them; the gate's own tests unset it.
-os.environ.setdefault("EWL_EXTERNAL_PROCESSORS", "openai,google")
+os.environ.setdefault("SLENS_EXTERNAL_PROCESSORS", "openai,google")
 
 import statistics
 import subprocess
@@ -45,13 +45,13 @@ import sys
 import tempfile
 import threading
 
-from ewl.analyse import evaluate
-import ewl.label.examples as examples_mod
-from ewl.label import judges
-from ewl.collect import merge
-from ewl.analyse import report
-from ewl import taxonomy
-from ewl.analyse import validate
+from sentiment_lens.analyse import evaluate
+import sentiment_lens.label.examples as examples_mod
+from sentiment_lens.label import judges
+from sentiment_lens.collect import merge
+from sentiment_lens.analyse import report
+from sentiment_lens import taxonomy
+from sentiment_lens.analyse import validate
 
 FIXTURE = [
     ("They spent millions lobbying and paid no tax at all.", "democracy"),
@@ -125,7 +125,7 @@ def write_fixture(path):
                              "body": body, "hand_domain": label})
 
 
-from ewl.label import classify
+from sentiment_lens.label import classify
 
 print("taxonomy")
 check("off-list answers become a parse failure, not fuzzy-matched, and not "
@@ -323,13 +323,13 @@ try:
     _opus55_probe._sample("a comment", "a short prompt", 0)
     _opus_refused = False
 except judges.ThinkingUnavailable as _tu:
-    _opus_refused = "EWL_ANTHROPIC_ALLOW_THINKING" in str(_tu)
+    _opus_refused = "SLENS_ANTHROPIC_ALLOW_THINKING" in str(_tu)
 check("Opus 5.5 stops with a clear message instead of running with thinking on, and sends nothing",
       _opus_refused and _opus55_probe._client.messages.last_kwargs is None)
 _opus_ok = _make_probe("claude-opus-5-5")
 _opus_ok.allow_thinking = True
 _opus_ok._sample("a comment", "a short prompt", 0)
-check("with EWL_ANTHROPIC_ALLOW_THINKING it runs thinking-on: no thinking field, a larger reply limit",
+check("with SLENS_ANTHROPIC_ALLOW_THINKING it runs thinking-on: no thinking field, a larger reply limit",
       "thinking" not in _opus_ok._client.messages.last_kwargs
       and _opus_ok._client.messages.last_kwargs["max_tokens"] == 1024
       and _sonnet55_probe._client.messages.last_kwargs["max_tokens"] == 256)
@@ -754,7 +754,7 @@ check("cache_savings_usd is what those read tokens would have cost at full price
 # Judge (judges.py) -- it does not inherit either method automatically. The
 # crash surfaced only after a full 23-comment run had already completed and
 # spent real money, right at the final summary line.
-import ewl.label.sentiment as _sent_cache_test
+import sentiment_lens.label.sentiment as _sent_cache_test
 _vader = _sent_cache_test.create("vader")
 check("a non-judge-backed scorer (vader) has a safe default cache_savings_usd",
       _vader.cache_savings_usd() == 0.0)
@@ -984,7 +984,7 @@ check("a 429 inside a longer id is not a rate limit either",
 
 
 print("\ninstrument switches: defaults change nothing, each switch changes only what it names")
-from ewl.label import sentiment as _sent, combined as _comb, instrument as _instr
+from sentiment_lens.label import sentiment as _sent, combined as _comb, instrument as _instr
 
 _RULE_PHRASES = ("generally supportive", "generally hostile", "generally defending")
 try:
@@ -1139,7 +1139,7 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(_in, "w", newline="", encoding="utf-8") as _fh:
         _fh.write("comment_id,body\nc1,fine\nc2,also fine\n")
     import contextlib, io
-    from ewl.label import classify as _classify_mod
+    from sentiment_lens.label import classify as _classify_mod
     _argv = sys.argv
     sys.argv = ["classify.py", _in, "--judge", "test_fatal", "--output", _out]
     _stderr = io.StringIO()
@@ -1332,7 +1332,7 @@ with optional("retrieval checks"):
     _out.select("gardening tips for beginners")
     check("an out-of-pool comment counts no self-match", _out.self_matches == 0)
 print("\nhand-coding sample allocation")
-from ewl.analyse import validate
+from sentiment_lens.analyse import validate
 check("exact n across equal strata, no integer-division shortfall",
       sum(validate.allocate({"a": 1000, "b": 1000, "c": 1000}, 200).values()) == 200)
 _thin = validate.allocate({"a": 1000, "b": 1000, "c": 1000, "d": 20}, 200)
@@ -1567,7 +1567,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 
 print("\naudit: undecidable is not a verdict")
-import ewl.label.keywords as _kc
+import sentiment_lens.label.keywords as _kc
 with tempfile.TemporaryDirectory() as tmp:
     _kwf = os.path.join(tmp, "kw.yml")
     open(_kwf, "w").write("democracy:\n  - lobbying\nenvironment:\n  - jet\n"
@@ -1586,10 +1586,10 @@ with tempfile.TemporaryDirectory() as tmp:
 # after made "[deleted] " and "@[deleted]" miss the marker set and hash, so
 # every deleted user in the corpus collapsed into one synthetic mega-author --
 # the same error the function exists to prevent, only larger. Cover for #47.
-import ewl.common as _common
-_prev_salt = os.environ.get("EWL_AUTHOR_SALT")
-os.environ["EWL_AUTHOR_SALT"] = "0123456789abcdefTEST"
-_common._SALT = os.environ["EWL_AUTHOR_SALT"]
+import sentiment_lens.common as _common
+_prev_salt = os.environ.get("SLENS_AUTHOR_SALT")
+os.environ["SLENS_AUTHOR_SALT"] = "0123456789abcdefTEST"
+_common._SALT = os.environ["SLENS_AUTHOR_SALT"]
 check("the same user hashes the same with or without a leading @",
       _common.hash_author("@someone") == _common.hash_author("someone"))
 check("every spelling of a deleted author returns no pseudonym at all",
@@ -1599,9 +1599,9 @@ check("every spelling of a deleted author returns no pseudonym at all",
 check("two different real users still differ",
       _common.hash_author("alice") != _common.hash_author("bob"))
 if _prev_salt is None:
-    del os.environ["EWL_AUTHOR_SALT"]
+    del os.environ["SLENS_AUTHOR_SALT"]
 else:
-    os.environ["EWL_AUTHOR_SALT"] = _prev_salt
+    os.environ["SLENS_AUTHOR_SALT"] = _prev_salt
 _common._SALT = _prev_salt or ""
 
 # The keyword CLI crashed with UnboundLocalError before writing a row: the
@@ -1615,7 +1615,7 @@ with tempfile.TemporaryDirectory() as _t:
                   "2,youtube,jets,u,h,\n")
     _out = os.path.join(_t, "out.csv")
     _env = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
-    _proc = subprocess.run([sys.executable, "-m", "ewl.label.keywords", _in,
+    _proc = subprocess.run([sys.executable, "-m", "sentiment_lens.label.keywords", _in,
                             "--output", _out],
                            capture_output=True, text=True, env=_env)
     check("the keyword classifier runs from the command line",
@@ -1626,12 +1626,12 @@ with tempfile.TemporaryDirectory() as _t:
           and "1 row(s) had no comment text" in _proc.stderr,
           _proc.stderr.strip())
 
-# The manifest ewl-merge writes used to die at this step: ewl-keywords read a
+# The manifest slens-merge writes used to die at this step: slens-keywords read a
 # frozen corpus and wrote a new CSV with no manifest of its own, so
 # --strict-corpus on the keyword-passed file always reported "No manifest",
 # not because nothing could be checked but because nothing here ever froze
 # it. Same bug, same fix, in scripts_scratch_add_primary_category.py.
-from ewl import corpus as _corpus
+from sentiment_lens import corpus as _corpus
 with tempfile.TemporaryDirectory() as _t:
     _frozen = os.path.join(_t, "frozen.csv")
     with open(_frozen, "w", newline="", encoding="utf-8") as _fh:
@@ -1641,32 +1641,32 @@ with tempfile.TemporaryDirectory() as _t:
 
     _kw_out = os.path.join(_t, "kw.csv")
     _env = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
-    _proc = subprocess.run([sys.executable, "-m", "ewl.label.keywords", _frozen,
+    _proc = subprocess.run([sys.executable, "-m", "sentiment_lens.label.keywords", _frozen,
                             "--output", _kw_out], capture_output=True, text=True, env=_env)
-    check("ewl-keywords notes an unfrozen input rather than staying silent",
+    check("slens-keywords notes an unfrozen input rather than staying silent",
           "NOTE:" not in _proc.stderr,
           "the input WAS frozen just above, so no NOTE should fire here -- "
           "sanity check that verify() is actually being called")
-    check("ewl-keywords freezes its own output",
+    check("slens-keywords freezes its own output",
           os.path.exists(_kw_out + ".manifest.json"), _proc.stderr)
     check("that manifest verifies against the file just written",
           _corpus.verify(_kw_out)[0] is True and "No manifest" not in _corpus.verify(_kw_out)[1])
 
     _prim_out = os.path.join(_t, "primary.csv")
-    _proc2 = subprocess.run([sys.executable, "-m", "ewl.collect.primary_category",
+    _proc2 = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.primary_category",
                              _kw_out, "--output", _prim_out],
                             capture_output=True, text=True, env=_env)
-    check("ewl-primary-category freezes its own output too",
+    check("slens-primary-category freezes its own output too",
           os.path.exists(_prim_out + ".manifest.json"), _proc2.stderr)
 
     # The point of the whole chain: --strict-corpus on the doubly-derived file
     # must actually find something to check, not silently fall back to "no
     # manifest" three steps downstream of the real corpus.
     _judge_out = os.path.join(_t, "labelled.csv")
-    _proc3 = subprocess.run([sys.executable, "-m", "ewl.label.classify", _prim_out,
+    _proc3 = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _prim_out,
                              "--judge", "keyword", "--strict-corpus",
                              "--output", _judge_out], capture_output=True, text=True, env=_env)
-    check("--strict-corpus finds a real manifest three steps downstream of ewl-merge",
+    check("--strict-corpus finds a real manifest three steps downstream of slens-merge",
           "No manifest" not in _proc3.stderr and _proc3.returncode == 0, _proc3.stderr)
 
 # Two biases used to sit in classify()'s ranking key, both inflating whichever
@@ -1702,12 +1702,12 @@ with tempfile.TemporaryDirectory() as tmp:
               == _kc.classify("alpha theta fixed", _p3)[0] for _ in range(5)))
 
 
-# The gold-set join. `ewl-validate sample` strips the machine labels so the
+# The gold-set join. `slens-validate sample` strips the machine labels so the
 # coder cannot see them, and nothing put them back -- so a coder who agreed
 # with the classifier on EVERY row scored recall 0.00 across all four
 # categories, exit 0, no warning, and --scored published that as "validated".
 print("\ninclusion_prob must weight the published precision and recall")
-from ewl.analyse import export_dashboard as _ed
+from sentiment_lens.analyse import export_dashboard as _ed
 
 _strat = ([{"hand_domain": "environment", "domain_environment": "1" if i < 18 else "0",
             "inclusion_prob": "0.1"} for i in range(20)]
@@ -1741,7 +1741,7 @@ check("and a gold set with no inclusion_prob is unweighted, as a simple random s
 check("the export records whether the weights were applied",
       _w["ht_weighted"] is True and _u["ht_weighted"] is False)
 
-from ewl.analyse import validate as _val_early
+from sentiment_lens.analyse import validate as _val_early
 _sc_w = io.StringIO()
 with contextlib.redirect_stdout(_sc_w), contextlib.redirect_stderr(io.StringIO()):
     _val_early.cmd_score([dict(r, hand_domain=r["hand_domain"],
@@ -1749,7 +1749,7 @@ with contextlib.redirect_stdout(_sc_w), contextlib.redirect_stderr(io.StringIO()
 _sc_u = io.StringIO()
 with contextlib.redirect_stdout(_sc_u), contextlib.redirect_stderr(io.StringIO()):
     _val_early.cmd_score(_flat)
-check("ewl-validate score is weighted too, not just the dashboard",
+check("slens-validate score is weighted too, not just the dashboard",
       _sc_w.getvalue() != _sc_u.getvalue(),
       "score prints 'report these numbers in the briefing', so it must match the dashboard")
 
@@ -1771,7 +1771,7 @@ check("n reflects the codeable subset, not the whole row count",
 print("\nread_any (not read) loads a coder's .xlsx file for interrater/agree/etc")
 with optional("xlsx coder files"):
     import openpyxl
-    from ewl.analyse import validate as _val_xlsx
+    from sentiment_lens.analyse import validate as _val_xlsx
     with tempfile.TemporaryDirectory() as _tmp:
         _xlsx_path = os.path.join(_tmp, "coder.xlsx")
         _wb = openpyxl.Workbook()
@@ -1824,7 +1824,7 @@ with optional("openai SDK"):
 
 
 print("\nparse failures must not be scored as classifier misses")
-from ewl.analyse import report as _rep_pf
+from sentiment_lens.analyse import report as _rep_pf
 
 _pf_gold = ([{"hand_domain": "democracy", "domain_democracy": "1",
               "domain_parse_failure": "0", "source": f"v{i % 6}"} for i in range(30)]
@@ -1861,7 +1861,7 @@ check("a vote with no majority is a parse failure, not a genuine 'none'",
 
 
 print("\nthe gold set must be joined back to the machine labels before it can be scored")
-from ewl.analyse import validate as _val
+from sentiment_lens.analyse import validate as _val
 
 _labelled = [{"comment_id": "c1", "body": "tax dodging", "kw_democracy": "1",
               "kw_economics": "0", "kw_environment": "0", "kw_social": "0"},
@@ -2074,7 +2074,7 @@ check("two-phase probability p1 + (1-p1)*m/(N-n1) matches a simulation of the tw
       abs(_hits / _trials - _formula) < 0.01, (_hits / _trials, _formula))
 
 print("\ninclusion probabilities: no silent weight 1")
-from ewl.analyse import validate as _vw, report as _rw
+from sentiment_lens.analyse import validate as _vw, report as _rw
 def _raises(fn):
     try:
         fn()
@@ -2167,7 +2167,7 @@ check("the basis column distinguishes two-phase from single-phase rows",
 
 
 
-import ewl.analyse.evaluate as _evaluate_policy
+import sentiment_lens.analyse.evaluate as _evaluate_policy
 print("\nbenchmark policy: every scorecard arm uses the 25 fixed examples")
 check("a `fixed` arm, a bare arm under the default selector and the keyword baseline pass",
       _evaluate_policy.non_fixed_arms(
@@ -2257,7 +2257,7 @@ check("bucket function: 0 and -1 are never folded into the scale",
       _val.sentiment_bucket("0") == "0" and _val.sentiment_bucket("-1") == "-1"
       and _val.sentiment_bucket("3") == "neutral" and _val.sentiment_bucket("5") == "positive")
 
-from ewl.collect import merge as _merge_scope
+from sentiment_lens.collect import merge as _merge_scope
 _rows = [{"story": "luigi", "author_hash": "a1", "comment_id": "l1"},
          {"story": "luigi", "author_hash": "a1", "comment_id": "l2"},
          {"story": "musk", "author_hash": "a1", "comment_id": "m1"},
@@ -2279,7 +2279,7 @@ except ValueError:
 
 print("\nscoring: exemplar exclusion, video-clustered intervals, split by video")
 import csv as _csv9
-import ewl.analyse.evaluate as _ev9
+import sentiment_lens.analyse.evaluate as _ev9
 
 _tmp9 = _tmp_unc.mkdtemp()
 _gold_path = os.path.join(_tmp9, "gold.csv")
@@ -2331,8 +2331,8 @@ check("split by video is reproducible for a seed",
 
 
 print("\nsentiment failures are their own labels, and one parse-failure rule runs through the rates")
-from ewl.analyse import report as _rep10, export_dashboard as _exp10
-from ewl.label import sentiment as _sent10
+from sentiment_lens.analyse import report as _rep10, export_dashboard as _exp10
+from sentiment_lens.label import sentiment as _sent10
 
 # Rates: blank sentiment_value is "not rated", not 0.0.
 _sv = [{"source": "v1", "sentiment_value": "-1.0"}, {"source": "v1", "sentiment_value": "-1.0"},
@@ -2370,11 +2370,11 @@ check("per_category_scores leaves a parse-failure row out of recall (1 of 1 answ
       _pcs["democracy"]["recall"] == 1.0 and _pcs["democracy"]["parse_failure_rows_excluded"] == 1,
       _pcs["democracy"])
 
-# End to end through ewl-classify: the stub judge answers "social", which has no digit, so
+# End to end through slens-classify: the stub judge answers "social", which has no digit, so
 # every sentiment reply is unreadable.
 _t10 = _tmp_unc.mkdtemp()
 _c10 = os.path.join(_t10, "c.csv")
-from ewl.common import FIELDNAMES as _FN10
+from sentiment_lens.common import FIELDNAMES as _FN10
 with open(_c10, "w", newline="", encoding="utf-8-sig") as _h:
     _w = _csv9.DictWriter(_h, fieldnames=_FN10)
     _w.writeheader()
@@ -2382,7 +2382,7 @@ with open(_c10, "w", newline="", encoding="utf-8-sig") as _h:
         _w.writerow({"comment_id": f"x{_i}", "platform": "youtube", "story": "jets",
                      "source": "v1", "author_hash": "a", "body": f"comment {_i}"})
 _o10 = os.path.join(_t10, "o.csv")
-_p10 = subprocess.run([sys.executable, "-m", "ewl.label.classify", _c10, "--judge", "stub",
+_p10 = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _c10, "--judge", "stub",
                        "--sentiment", "llm:stub", "--votes", "1", "--no-cache", "--output", _o10],
                       capture_output=True, text=True,
                       env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
@@ -2433,7 +2433,7 @@ check("the comments left out are exported as their own shares over ALL comments 
 
 print("\nreport: effective videos, and the corrected estimate story by story")
 import random as _r11
-from ewl.analyse import report as _rep11
+from sentiment_lens.analyse import report as _rep11
 
 check("equal-sized videos: effective videos equals the video count",
       abs(_rep11.effective_clusters([{"source": f"v{i % 5}"} for i in range(50)]) - 5) < 1e-9)
@@ -2486,7 +2486,7 @@ check("a story with no gold rows at all says so",
 
 
 print("\nclean_videos: exact video-ID matching")
-from ewl.collect import clean_videos as _cv
+from sentiment_lens.collect import clean_videos as _cv
 
 check("a watch URL, a youtu.be link, a shorts link and a bare ID all give the same video ID",
       {_cv.video_id("https://www.youtube.com/watch?v=-dxftQC09H4"),
@@ -2526,7 +2526,7 @@ if project_file("excluded_video_ids.txt"):
 
 
 print("\nredact: handles, emails and phone numbers")
-from ewl.collect import redact as _rd
+from sentiment_lens.collect import redact as _rd
 
 _t, _c = _rd.redact_text("@SomeChannel thanks, but the tax is fair", handles="leading")
 check("a leading handle (the addressee) becomes @user, and the rest is untouched",
@@ -2579,22 +2579,22 @@ with open(_src, "w", newline="", encoding="utf-8-sig") as _h:
     _w.writerow({"comment_id": "2", "story": "jets", "source": "v", "body": "no identifiers"})
 _dst = os.path.join(_td, "red.csv")
 _envr = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
-_scan_only = subprocess.run([sys.executable, "-m", "ewl.collect.redact", _src],
+_scan_only = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.redact", _src],
                             capture_output=True, text=True, env=_envr)
 check("with no --output it reports and writes nothing",
       _scan_only.returncode == 0 and not os.path.exists(_dst)
       and "open with an @handle" in _scan_only.stderr, _scan_only.stderr)
-_noop = subprocess.run([sys.executable, "-m", "ewl.collect.redact", _src, "--output", _dst],
+_noop = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.redact", _src, "--output", _dst],
                        capture_output=True, text=True, env=_envr)
 check("--output with nothing chosen to redact is refused, not a silent copy",
       _noop.returncode != 0 and not os.path.exists(_dst), _noop.stderr)
-_same = subprocess.run([sys.executable, "-m", "ewl.collect.redact", _src, "--output", _src,
+_same = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.redact", _src, "--output", _src,
                         "--handles", "leading"], capture_output=True, text=True, env=_envr)
 with open(_src, encoding="utf-8-sig", newline="") as _h:
     _orig_rows = list(_csv9.DictReader(_h))
 check("--output equal to the input is refused, and the original is untouched",
       _same.returncode != 0 and _orig_rows[0]["body"] == "@Chan thanks", _same.stderr)
-_run = subprocess.run([sys.executable, "-m", "ewl.collect.redact", _src, "--output", _dst,
+_run = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.redact", _src, "--output", _dst,
                        "--handles", "leading"], capture_output=True, text=True, env=_envr)
 with open(_dst, encoding="utf-8-sig", newline="") as _h:
     _rows_r = list(_csv9.DictReader(_h))
@@ -2606,7 +2606,7 @@ check("it writes the redacted file, leaves the original alone, and freezes a man
 
 
 print("\ncache-minimum check covers the sentiment prompts too, and flags borderline ones")
-import ewl.label.sentiment as sentiment_mod
+import sentiment_lens.label.sentiment as sentiment_mod
 _edge = 4 * 1024  # exactly 1,024 tokens by the 4-chars-per-token estimate
 _rep = {label: (est, verdict) for label, est, _min, verdict in judges.cache_report(
     "claude-sonnet-5", {"under": "a" * (_edge - 400), "just over": "a" * (_edge + 200),
@@ -2765,7 +2765,7 @@ try:
     check("read_gold then drops exactly those comments",
           [r["comment_id"] for r in _ev9.read_gold(_gp, exclude_ids=_ev9._exclude_ids(_EvArgs()))]
           == ["other1", "other2"])
-    check("and `ewl-validate score --exclude-ids` accepts the same file (it has a comment_id column)",
+    check("and `slens-validate score --exclude-ids` accepts the same file (it has a comment_id column)",
           _val.read_ids(_fx_path) == {"gold1", "gold2", "gold3"}, _val.read_ids(_fx_path))
 finally:
     taxonomy.reset_fixed_examples(_orig_fixed)
@@ -2797,7 +2797,7 @@ with open(_c16, "w", newline="", encoding="utf-8-sig") as _h:
                      "author_hash": "a", "body": f"comment {_i}"})
 _o16 = os.path.join(_fxd, "o.csv")
 _env16 = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
-_p16 = subprocess.run([sys.executable, "-m", "ewl.label.classify", _c16, "--judge", "stub",
+_p16 = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _c16, "--judge", "stub",
                        "--sentiment", "llm:stub", "--votes", "1", "--no-cache", "--output", _o16,
                        "--fixed-examples", _fx_path,
                        # This file has no ratings: an llm: sentiment run must say it means that.
@@ -2810,7 +2810,7 @@ check("classify --fixed-examples runs, and the run record holds ids and a hash b
       and len(_rec["fixed_examples"]["sha256"]) == 64 and "REAL-LOOKING" not in _rec_text
       and "examples" not in _rec["fixed_examples"], (_p16.stderr[-300:], _rec["fixed_examples"]))
 _d16 = os.path.join(_fxd, "dash.json")
-_e16 = subprocess.run([sys.executable, "-m", "ewl.analyse.export_dashboard", _o16, "--output",
+_e16 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", _o16, "--output",
                        _d16, "--allow-unvalidated"], capture_output=True, text=True, env=_env16)
 _dash16 = open(_d16, encoding="utf-8").read()
 check("and the dashboard codebook publishes the ids and labels, with the text withheld",
@@ -3327,7 +3327,7 @@ check("a different vote count gets its own instance, not the first caller's",
       _v1 is not _v3)
 check("and the votes it was asked for are the votes it runs",
       (_v1.votes, _v3.votes) == (1, 3), (_v1.votes, _v3.votes))
-import ewl.label.sentiment as _sent_early
+import sentiment_lens.label.sentiment as _sent_early
 check("the judge and the sentiment scorer still share one instance",
       _sent_early.create("combined:test_probe", votes=3,
                            cache_path=None, fuzzy=False)._judge
@@ -3503,7 +3503,7 @@ check("a parse failure is excluded from recall, not counted as a missed 'none'",
       _pf_arm["per_category"]["social"])
 
 print("\ncombined arm")
-from ewl.label import combined
+from sentiment_lens.label import combined
 check("registry exposes the combined backend once combined.py is imported",
       "combined" in judges.available(), judges.available())
 _cases = [("democracy | 2", ["democracy"], 2), ("economics, social | 4", ["economics", "social"], 4),
@@ -3519,7 +3519,7 @@ check("a digit inside the domain is not read as the rating",
       combined.split_reply("social | 2")[1] == 2)
 _j = judges.create("combined:stub")
 _s = sentiment_mod_placeholder = None
-import ewl.label.sentiment as _sent
+import sentiment_lens.label.sentiment as _sent
 check("judge and scorer share one instance", judges.create("combined:stub") is
       _sent.create("combined:stub")._judge,
       "two instances would each make their own calls and undo the saving")
@@ -3566,28 +3566,28 @@ check("an unrecognised story falls back to sentiment.NO_STORY_CONTEXT",
       _sent.NO_STORY_CONTEXT in combined.build_prompt(taxonomy.FIXED_EXAMPLES, story="not-a-real-story"))
 
 print("\nlanguage detection is recorded, not acted on")
-from ewl import common as ewl_common
-check("detected_lang is part of the schema", "detected_lang" in ewl_common.FIELDNAMES)
+from sentiment_lens import common as sl_common
+check("detected_lang is part of the schema", "detected_lang" in sl_common.FIELDNAMES)
 check("a comment too short to judge returns empty, not a guess",
-      ewl_common.detect_language("lol") == "")
-check("empty input returns empty", ewl_common.detect_language("") == ""
-      and ewl_common.detect_language(None) == "")
+      sl_common.detect_language("lol") == "")
+check("empty input returns empty", sl_common.detect_language("") == ""
+      and sl_common.detect_language(None) == "")
 with optional("language detection"):
     import langdetect  # noqa: F401
     check("a long English comment detects as en",
-          ewl_common.detect_language(
+          sl_common.detect_language(
               "This is a reasonably long English sentence about wealth taxes and policy.") == "en")
     check("unknown always passes the legacy filter",
-          ewl_common.is_language("lol", "en") and ewl_common.is_language("", "en"),
+          sl_common.is_language("lol", "en") and sl_common.is_language("", "en"),
           "a comment the detector cannot read must not be dropped as foreign")
-    check("no --lang means no filtering", ewl_common.is_language("n'importe quoi", None))
+    check("no --lang means no filtering", sl_common.is_language("n'importe quoi", None))
 
 
 print("\nboth collectors agree on the language contract")
 with optional("collector signatures"):
     import ast as _ast
-    import ewl.collect.youtube as _yc_mod
-    import ewl.collect.youtube_api as _ya_mod
+    import sentiment_lens.collect.youtube as _yc_mod
+    import sentiment_lens.collect.youtube_api as _ya_mod
     for _mod in (_yc_mod, _ya_mod):
         _f = _mod.__file__
         _tree = _ast.parse(open(_f).read())
@@ -3603,7 +3603,7 @@ with optional("collector signatures"):
 
 print("\nreport.py guards against confidently-wrong figures")
 with optional("report"):
-    import ewl.analyse.report as _rep
+    import sentiment_lens.analyse.report as _rep
     check("Rogan-Gladen refuses an inverted classifier (TPR < FPR)",
           all(_rep.corrected_estimate(o, tpr, fpr) is None for o, tpr, fpr in
               [(0.30, 0.20, 0.80), (0.50, 0.10, 0.90), (0.30, 0.10, 0.30)]),
@@ -3670,7 +3670,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 
 print("\ncorpus freezing")
-from ewl import corpus as _corpus
+from sentiment_lens import corpus as _corpus
 with tempfile.TemporaryDirectory() as tmp:
     _c = os.path.join(tmp, "corpus.csv")
     with open(_c, "w", newline="", encoding="utf-8-sig") as handle:
@@ -3690,7 +3690,7 @@ with tempfile.TemporaryDirectory() as tmp:
           == (9, 3, {"A": 5, "B": 4}), _man)
     check("a frozen corpus verifies", _corpus.verify(_c)[0])
     check("the salt is fingerprinted, never stored",
-          _man["salt_fingerprint"] and os.environ["EWL_AUTHOR_SALT"] not in json.dumps(_man),
+          _man["salt_fingerprint"] and os.environ["SLENS_AUTHOR_SALT"] not in json.dumps(_man),
           "two corpora hashed with different salts have incomparable author_hash")
 
     with open(_c, "a", encoding="utf-8") as handle:
@@ -3705,7 +3705,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 
 print("\ncollection and analysis stay separate")
-_ANALYSIS = ["ewl/label", "ewl/analyse"]
+_ANALYSIS = ["sentiment_lens/label", "sentiment_lens/analyse"]
 _NETWORK = ("googleapiclient", "requests", "urllib.request", "http.client")
 _leaks = []
 for _pkg in _ANALYSIS:
@@ -3714,21 +3714,21 @@ for _pkg in _ANALYSIS:
         for _n in _NETWORK:
             if f"import {_n}" in _src or f"from {_n}" in _src:
                 _leaks.append(f"{_f}: {_n}")
-        if "from ewl.collect" in _src or "import ewl.collect" in _src:
+        if "from sentiment_lens.collect" in _src or "import sentiment_lens.collect" in _src:
             _leaks.append(f"{_f}: imports a collector")
 check("no labelling or analysis module can reach the network or a collector",
       not _leaks, _leaks)
 
-_collect_leaks = [str(_f) for _f in pathlib.Path("src/ewl/collect").rglob("*.py")
-                  if "from ewl.label" in _f.read_text()
-                  or "from ewl.analyse" in _f.read_text()]
+_collect_leaks = [str(_f) for _f in pathlib.Path("src/sentiment_lens/collect").rglob("*.py")
+                  if "from sentiment_lens.label" in _f.read_text()
+                  or "from sentiment_lens.analyse" in _f.read_text()]
 check("no collector depends on labelling or analysis", not _collect_leaks, _collect_leaks)
 
 
 print("\nmulti-query search pools candidates")
 with optional("multi-query search"):
     import types as _t
-    from ewl.collect import youtube as _y
+    from sentiment_lens.collect import youtube as _y
 
     class _Search:
         """Each query returns 50 ids; queries 2+ overlap the first by 25."""
@@ -3779,7 +3779,7 @@ with optional("multi-query search"):
 print("\nexclusion ledger closes")
 with optional("collector ledger"):
     import types as _types
-    import ewl.collect.youtube as _yc
+    import sentiment_lens.collect.youtube as _yc
 
     class _FakeReq:
         def execute(self):
@@ -3816,7 +3816,7 @@ with optional("collector ledger"):
 
 print("\nShorts duration parsing")
 try:
-    from ewl.collect import youtube as youtube_collect
+    from sentiment_lens.collect import youtube as youtube_collect
 except Exception as _e:                # googleapiclient not installed
     print(f"  SKIP  ({type(_e).__name__})")
 else:
@@ -3948,7 +3948,7 @@ else:
 
 print("\nsentiment")
 with optional("sentiment scorers"):
-    import ewl.label.sentiment as sentiment_mod
+    import sentiment_lens.label.sentiment as sentiment_mod
     check("scorer registry", set(sentiment_mod.available()) >= {"vader", "llm", "stub"})
     check("thresholds are shared across scorers",
           (sentiment_mod.to_label(0.5), sentiment_mod.to_label(0.0), sentiment_mod.to_label(-0.5))
@@ -4249,7 +4249,7 @@ with tempfile.TemporaryDirectory() as tmp:
     _ht_out = io.StringIO()
     with contextlib.redirect_stdout(_ht_out), contextlib.redirect_stderr(io.StringIO()):
         evaluate.cmd_sentiment(_HTArgs)
-    check("ewl-evaluate sentiment reports the weighted accuracy (94%), not the draw's (25%)",
+    check("slens-evaluate sentiment reports the weighted accuracy (94%), not the draw's (25%)",
           "| 94% |" in _ht_out.getvalue() and "Horvitz-Thompson weighted" in _ht_out.getvalue(),
           _ht_out.getvalue())
 
@@ -4700,7 +4700,7 @@ check("and it discards few enough iterations to be reporting an unconditional in
 # Cluster-resampling the gold set (#53) is correct, but with no cluster column
 # every row buckets under "(unknown)", the single cluster resamples to itself,
 # and the interval collapses to ZERO width -- infinite precision. That is the
-# shape `ewl-validate sample` actually writes: nine columns, no `source`.
+# shape `slens-validate sample` actually writes: nine columns, no `source`.
 _gold_clustered = [{"hand_domain": "democracy" if i % 4 == 0 else "none",
                     "domain_democracy": "1" if (i % 4 == 0 and i % 5) else "0",
                     "source": f"v{i % 10}"} for i in range(200)]
@@ -4736,7 +4736,7 @@ check("and the same case does return an interval when the guard is lifted",
       "otherwise the refusal above proves nothing about the discard guard")
 
 # Horvitz-Thompson weighting: inclusion_prob was recorded by
-# `ewl-validate sample --stratify-by` and read by nobody, so a stratified gold
+# `slens-validate sample --stratify-by` and read by nobody, so a stratified gold
 # set produced the TPR of the draw rather than of the corpus.
 # The weights have to differ WITHIN a term to change anything: TPR is
 # tp/(tp+fn), so weighting every democracy row identically cancels. Here the
@@ -4948,7 +4948,7 @@ with tempfile.TemporaryDirectory() as tmp:
     gold = os.path.join(tmp, "gold.csv")
     write_fixture(gold)
     split = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.evaluate", "split", gold, "--out-prefix", os.path.join(tmp, "cli")],
+        [sys.executable, "-m", "sentiment_lens.analyse.evaluate", "split", gold, "--out-prefix", os.path.join(tmp, "cli")],
         capture_output=True, text=True, env=env)
     check("split runs from the command line", split.returncode == 0, split.stderr[-400:])
     check("split writes both files",
@@ -4956,23 +4956,23 @@ with tempfile.TemporaryDirectory() as tmp:
           and os.path.exists(os.path.join(tmp, "cli_heldout.csv")))
 
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", gold, "--arm", "keyword/none",
+        [sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", gold, "--arm", "keyword/none",
          "--arm", "stub/fixed", "--arm", "ollama:definitely-not-installed/fixed"],
         capture_output=True, text=True, env=env)
     check("scorecard runs from the command line", proc.returncode == 0, proc.stderr[-400:])
     check("results survive an unavailable arm", "keyword" in proc.stdout and "stub" in proc.stdout)
 
-    # `ewl-report corrected` told the user to get --fpr "from evaluate.py's
+    # `slens-report corrected` told the user to get --fpr "from evaluate.py's
     # scorecard", but print_scorecard never printed it -- confirms the fix at
     # the actual CLI boundary, not just via the underlying function.
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", gold, "--arm", "keyword/none"],
+        [sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", gold, "--arm", "keyword/none"],
         capture_output=True, text=True, env=env)
     check("scorecard prints a per-category FPR table, not just precision/recall",
           "Per-category FPR" in proc.stdout, proc.stdout[-600:])
 
     # corrected-bootstrap end to end from the actual command line: a corpus
-    # with enough videos, a gold file shaped like ewl-classify's output (both
+    # with enough videos, a gold file shaped like slens-classify's output (both
     # domain_* and hand_domain), enough genuine positives to clear the floor.
     corpus_path = os.path.join(tmp, "cb_corpus.csv")
     with open(corpus_path, "w", newline="", encoding="utf-8-sig") as f:
@@ -4993,21 +4993,21 @@ with tempfile.TemporaryDirectory() as tmp:
                            "hand_domain": "democracy" if truth else "none",
                            "domain_democracy": "1" if truth else "0"})
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.report", "corrected-bootstrap", corpus_path,
+        [sys.executable, "-m", "sentiment_lens.analyse.report", "corrected-bootstrap", corpus_path,
          "--column", "domain_democracy", "--gold", gold_path, "--n-boot", "200"],
         capture_output=True, text=True, env=env)
     check("corrected-bootstrap runs from the command line and reports a CI, not just a point",
           proc.returncode == 0 and "Corrected 95% CI" in proc.stdout, proc.stdout + proc.stderr)
 
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.report", "corrected-bootstrap", corpus_path,
+        [sys.executable, "-m", "sentiment_lens.analyse.report", "corrected-bootstrap", corpus_path,
          "--column", "domain_democracy", "--gold", gold_path, "--min-genuine-positives", "10000"],
         capture_output=True, text=True, env=env)
     check("corrected-bootstrap refuses cleanly (exit 0, explained) rather than crashing "
           "when the genuine-positive floor isn't met",
           proc.returncode == 0 and "refused" in proc.stdout, proc.stdout + proc.stderr)
 
-    # ewl-export-dashboard end to end: 0% test coverage per the pipeline
+    # slens-export-dashboard end to end: 0% test coverage per the pipeline
     # review, including its refusal gates (the ones that stop an unvalidated
     # classifier run from being published as if it were a checked result).
     dash_corpus = os.path.join(tmp, "dash_corpus.csv")
@@ -5032,7 +5032,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     dash_out = os.path.join(tmp, "results.json")
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out],
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out],
         capture_output=True, text=True, env=env)
     check("export-dashboard refuses without --scored and no --allow-unvalidated",
           proc.returncode != 0 and "Refusing to export without hand-coded scores" in proc.stderr,
@@ -5041,7 +5041,7 @@ with tempfile.TemporaryDirectory() as tmp:
           not os.path.exists(dash_out), "a refused export must not leave a stale/partial file")
 
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--allow-unvalidated"],
         capture_output=True, text=True, env=env)
     check("export-dashboard runs end to end with --allow-unvalidated",
@@ -5069,13 +5069,13 @@ with tempfile.TemporaryDirectory() as tmp:
           and "classified_share" in _dash_payload.get("rates", {}),
           sorted(_dash_payload))
 
-    # The export is tied to a frozen corpus through the run record ewl-classify writes.
-    from ewl import corpus as _corp_d
+    # The export is tied to a frozen corpus through the run record slens-classify writes.
+    from sentiment_lens import corpus as _corp_d
     _good_hash = _corp_d.content_hash(dash_corpus)
     with open(dash_corpus + ".run.json", "w", encoding="utf-8") as _f:
         json.dump({"input": {"path": dash_corpus, "sha256": _good_hash}}, _f)
     _ok_run = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--allow-unvalidated", "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     check("export with --corpus passes when the corpus is the one the labels were made from",
           _ok_run.returncode == 0 and "matches the corpus the labels were made from" in _ok_run.stderr,
@@ -5089,7 +5089,7 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(dash_corpus + ".run.json", "w", encoding="utf-8") as _f:
         json.dump({"input": {"path": dash_corpus, "sha256": "0" * 64}}, _f)
     _bad_run = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--allow-unvalidated", "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     check("export is refused when the corpus is not the one the labels were made from",
           _bad_run.returncode != 0 and "is not the corpus these labels were made from" in _bad_run.stderr,
@@ -5101,7 +5101,7 @@ with tempfile.TemporaryDirectory() as tmp:
                    "fixed_examples": {"source": "file", "ids": _yt_ids, "labels": ["democracy", "none"],
                                       "sha256": "f" * 64}}, _f)
     _wh = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--allow-unvalidated", "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     _wh_text = open(dash_out, encoding="utf-8").read()
     _wh_cb = json.loads(_wh_text)["codebook"]
@@ -5111,7 +5111,7 @@ with tempfile.TemporaryDirectory() as tmp:
           and _wh_cb["examples_withheld_summary"] == {"n": 2, "sha256": "f" * 64}
           and _wh_cb["example_text_withheld"] is True, _wh.stderr[-300:])
     _wv = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--allow-unvalidated", "--corpus", dash_corpus, "--include-verbatim"],
         capture_output=True, text=True, env=env)
     _wv_text = open(dash_out, encoding="utf-8").read()
@@ -5134,7 +5134,7 @@ with tempfile.TemporaryDirectory() as tmp:
             w.writerow({"comment_id": f"c0_{i}", "hand_domain": "democracy" if i else "none",
                        "domain_democracy": "1" if i else "0"})
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--status", "validated"],
         capture_output=True, text=True, env=env)
     check("--status validated on too few scored rows is downgraded to provisional, not honoured",
@@ -5146,7 +5146,7 @@ with tempfile.TemporaryDirectory() as tmp:
         json.dump({"input": {"path": dash_corpus, "sha256": _good_hash},
                    "fixed_examples": {"source": "file", "ids": ["c0_1", "c0_2"], "labels": ["democracy", "none"]}}, _f)
     _ex_run = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     with open(dash_out, encoding="utf-8") as _f:
         _ex_payload = json.load(_f)
@@ -5157,7 +5157,7 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(_ex_ids, "w", newline="", encoding="utf-8-sig") as _f:
         _f.write("comment_id,note\nc0_3,x\n")
     _ex_run2 = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--corpus", dash_corpus, "--exclude-ids", _ex_ids],
         capture_output=True, text=True, env=env)
     with open(dash_out, encoding="utf-8") as _f:
@@ -5171,7 +5171,7 @@ with tempfile.TemporaryDirectory() as tmp:
           _ex_payload["provenance"].get("worked_examples_excluded"))
     os.remove(dash_corpus + ".run.json")
     _no_ids = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored], capture_output=True, text=True, env=env)
     with open(dash_out, encoding="utf-8") as _f:
         _no_ids_payload = json.load(_f)
@@ -5182,7 +5182,7 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(_bad_ids, "w", newline="", encoding="utf-8-sig") as _f:
         _f.write("id,label\nnope1,x\n")
     _bad_run3 = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--exclude-ids", _bad_ids], capture_output=True, text=True, env=env)
     check("--exclude-ids that matches no gold row warns instead of staying silent",
           "matches a gold" in _bad_run3.stderr, _bad_run3.stderr[-300:])
@@ -5192,7 +5192,7 @@ with tempfile.TemporaryDirectory() as tmp:
                    "fixed_examples": {"source": "built-in (synthetic)",
                                       "examples": [{"comment": "made-up example", "label": "none"}]}}, _f)
     _builtin_run = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     check("a run record on the built-in examples raises no 'no worked-example ids' warning",
           _builtin_run.returncode == 0 and "no worked-example ids are known" not in _builtin_run.stderr,
@@ -5202,14 +5202,14 @@ with tempfile.TemporaryDirectory() as tmp:
         json.dump({"input": {"path": dash_corpus, "sha256": _good_hash},
                    "fixed_examples": {"source": "file", "ids": ["nope1", "nope2"], "labels": ["none", "none"]}}, _f)
     _rec_nomatch = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--corpus", dash_corpus], capture_output=True, text=True, env=env)
     check("run-record example ids that match no gold row warn instead of staying silent",
           _rec_nomatch.returncode == 0 and "worked-example id(s) in the run record matches a gold row"
           in _rec_nomatch.stderr, _rec_nomatch.stderr[-300:])
     os.remove(dash_corpus + ".run.json")
     _missing_ids = subprocess.run(
-        [sys.executable, "-m", "ewl.analyse.export_dashboard", dash_corpus, "--output", dash_out,
+        [sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", dash_corpus, "--output", dash_out,
          "--scored", dash_scored, "--exclude-ids", os.path.join(tmp, "nope.csv")],
         capture_output=True, text=True, env=env)
     check("a missing --exclude-ids file is a clean error, not a traceback",
@@ -5227,7 +5227,7 @@ with tempfile.TemporaryDirectory() as tmp:
             w.writerow({"comment_id": f"k{i}", "body": f"comment {i}"})
     clf_out = os.path.join(tmp, "clf_out.csv")
     proc = subprocess.run(
-        [sys.executable, "-m", "ewl.label.classify", clf_in, "--judge", "stub",
+        [sys.executable, "-m", "sentiment_lens.label.classify", clf_in, "--judge", "stub",
          "--votes", "1", "--no-cache", "--output", clf_out],
         capture_output=True, text=True, env=env)
     check("classify runs from the command line at votes=1", proc.returncode == 0, proc.stderr[-600:])
@@ -5243,7 +5243,7 @@ with tempfile.TemporaryDirectory() as tmp:
           [r.get("sentiment_votes") for r in _clf_rows])
 
     proc3 = subprocess.run(
-        [sys.executable, "-m", "ewl.label.classify", clf_in, "--judge", "stub",
+        [sys.executable, "-m", "sentiment_lens.label.classify", clf_in, "--judge", "stub",
          "--votes", "3", "--no-cache", "--output", os.path.join(tmp, "clf_out3.csv")],
         capture_output=True, text=True, env=env)
     check("votes=3 still reports a real percentage, not a 'not measured' placeholder",
@@ -5275,8 +5275,8 @@ with tempfile.TemporaryDirectory() as tmp:
           "keyword" in out.getvalue() and "test_explodes" not in out.getvalue())
 
 print("\nyoutube_full_corpus: the no-caps wrapper actually overrides, and can still be overridden")
-import ewl.collect.youtube as _yt_mod
-import ewl.collect.youtube_full_corpus as _yt_full
+import sentiment_lens.collect.youtube as _yt_mod
+import sentiment_lens.collect.youtube_full_corpus as _yt_full
 
 _captured_argv = []
 
@@ -5326,16 +5326,16 @@ with _tmp_b.TemporaryDirectory() as _tb:
         _w = csv.DictWriter(_fh, fieldnames=["comment_id", "body"])
         _w.writeheader()
         _w.writerow({"comment_id": "z1", "body": "a comment"})
-    _env = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _env = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
     _p = subprocess.run(
-        [sys.executable, "-m", "ewl.label.classify", _in, "--judge", "stub", "--votes", "1",
+        [sys.executable, "-m", "sentiment_lens.label.classify", _in, "--judge", "stub", "--votes", "1",
          "--cache", _cache_file, "--output", os.path.join(_tb, "o.csv")],
         capture_output=True, text=True, env=_env)
-    check("ewl-classify refuses a cache holding empty replies",
+    check("slens-classify refuses a cache holding empty replies",
           _p.returncode != 0 and "empty cached repl" in (_p.stdout + _p.stderr),
           (_p.stdout + _p.stderr)[-400:])
     _p = subprocess.run(
-        [sys.executable, "-m", "ewl.label.classify", _in, "--judge", "stub", "--votes", "1",
+        [sys.executable, "-m", "sentiment_lens.label.classify", _in, "--judge", "stub", "--votes", "1",
          "--cache", _cache_file, "--keep-empty-cached-replies",
          "--output", os.path.join(_tb, "o2.csv")],
         capture_output=True, text=True, env=_env)
@@ -5511,10 +5511,10 @@ with _tmp_base.TemporaryDirectory() as _tb2:
         _w = csv.DictWriter(_fh, fieldnames=_FIELDS)
         _w.writeheader()
         _w.writerows(_corpus_b)
-    _env2 = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _env2 = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
 
     def _report_cli(*extra):
-        return subprocess.run([sys.executable, "-m", "ewl.analyse.report", "observed", _csv,
+        return subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "observed", _csv,
                                "--column", "domain_democracy", "--by", "story", "--n-boot",
                                "50", *extra], capture_output=True, text=True, env=_env2)
 
@@ -5526,7 +5526,7 @@ with _tmp_base.TemporaryDirectory() as _tb2:
     check("--base both prints the two figures under their own denominators",
           _both.returncode == 0 and "33.3%" in _both.stdout and "60.0%" in _both.stdout
           and _both.stdout.count("=== Base:") == 2, _both.stdout + _both.stderr)
-    _bad = subprocess.run([sys.executable, "-m", "ewl.analyse.report", "corrected", _csv,
+    _bad = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "corrected", _csv,
                            "--column", "domain_democracy", "--tpr", "0.9", "--fpr", "0.1",
                            "--base", "classified"], capture_output=True, text=True, env=_env2)
     check("corrected --tpr/--fpr refuses a non-default base (the rates would be on another base)",
@@ -5566,14 +5566,14 @@ with tempfile.TemporaryDirectory() as _te:
         _w.writerow(["comment_id", "body", "label"])
         for _i in _gold_ids[:3]:
             _w.writerow([_i, "an example", "democracy"])
-    _envx = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.report", "corrected-bootstrap", _cc,
+    _envx = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "corrected-bootstrap", _cc,
                          "--column", "domain_democracy", "--gold", _gg, "--exclude-ids", _ex,
                          "--min-genuine-positives", "1", "--n-boot", "20"],
                         capture_output=True, text=True, env=_envx)
     check("report --exclude-ids drops the listed gold comments before the correction, and says so",
           "Excluded 3 of" in _p.stderr, _p.stderr[-400:])
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.report", "corrected-bootstrap", _cc,
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "corrected-bootstrap", _cc,
                          "--column", "domain_democracy", "--gold", _gg,
                          "--min-genuine-positives", "1", "--n-boot", "20"],
                         capture_output=True, text=True, env=_envx)
@@ -5607,11 +5607,11 @@ with tempfile.TemporaryDirectory() as _t102:
             _w.writerows(_rws)
     with open(_x102, "w", newline="", encoding="utf-8-sig") as _f:
         _f.write("comment_id\nnone_of_these\n")
-    _e102 = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _e102 = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
 
     def _cli102(gold, *extra):
         return subprocess.run(
-            [sys.executable, "-m", "ewl.analyse.report", "corrected-bootstrap", _c102,
+            [sys.executable, "-m", "sentiment_lens.analyse.report", "corrected-bootstrap", _c102,
              "--column", "domain_democracy", "--gold", gold, "--min-genuine-positives", "1",
              "--n-boot", "40", *extra], capture_output=True, text=True, env=_e102)
 
@@ -5652,14 +5652,14 @@ with tempfile.TemporaryDirectory() as _t102b:
         _w = csv.DictWriter(_f, fieldnames=_FIELDS)
         _w.writeheader()
         _w.writerows(_two)
-    _env2b = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.report", "observed", _c2,
+    _env2b = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "observed", _c2,
                          "--column", "domain_democracy", "--by", "story", "--n-boot", "30",
                          "--base", "classified"], capture_output=True, text=True, env=_env2b)
     check("observed --base classified prints the dropped story as 'no tagged comments'",
           _p.returncode == 0 and "musk" in _p.stdout and "no tagged comments" in _p.stdout,
           _p.stdout + _p.stderr[-300:])
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.report", "aggregate", _c2,
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.report", "aggregate", _c2,
                          "--column", "domain_democracy", "--n-boot", "30", "--base", "both"],
                         capture_output=True, text=True, env=_env2b)
     check("aggregate --base both reports the all base and says the tagged base is not reported",
@@ -5758,10 +5758,10 @@ with tempfile.TemporaryDirectory() as _t106:
             _w = csv.DictWriter(_f, fieldnames=_FLD106, extrasaction="ignore")
             _w.writeheader()
             _w.writerows(_rws)
-    _e106 = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _e106 = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
 
     def _run106(cmd, corpus, gold=None, *extra):
-        args = [sys.executable, "-m", "ewl.analyse.report", cmd, _paths106[corpus],
+        args = [sys.executable, "-m", "sentiment_lens.analyse.report", cmd, _paths106[corpus],
                 "--column", "domain_democracy", "--n-boot", "100", *extra]
         if gold:
             args += ["--gold", _paths106[gold]]
@@ -5793,8 +5793,8 @@ with tempfile.TemporaryDirectory() as _t106:
           "from --tpr/--fpr alone" in _line[0], _p.stdout + _p.stderr[-300:])
 
 print("\nopen-weight arm: Gemma 2 27B Q4_0 through a local Ollama (mocked; no server needed)")
-from ewl.label import gemma_local, classify_gemma
-import ewl.label.sentiment as _sent_gemma
+from sentiment_lens.label import gemma_local, classify_gemma
+import sentiment_lens.label.sentiment as _sent_gemma
 
 _TAG = gemma_local.MODEL_TAG
 
@@ -5894,26 +5894,26 @@ try:
     _lj.sample("y" * 9_000, _long_prompt)
     check("a 9,000-character comment fits the default window", _lj.usage["truncated_bodies"] == 1)
 
-    os.environ["EWL_GEMMA_NUM_CTX"] = "4096"
+    os.environ["SLENS_GEMMA_NUM_CTX"] = "4096"
     try:
         _small = judges.create("gemma")
         _small.sample("y" * 9_000, _long_prompt)
         check("the same comment IS cut in a 4096 window, so the guard is what protects the prompt",
               _small.usage["truncated_bodies"] == 1 and _fake.calls[-1]["options"]["num_ctx"] == 4096)
-        os.environ["EWL_GEMMA_NUM_CTX"] = "2048"
+        os.environ["SLENS_GEMMA_NUM_CTX"] = "2048"
         try:
             judges.create("gemma")
             check("a window too small for the prompts is refused", False, "no exception")
         except ValueError:
             check("a window too small for the prompts is refused", True)
-        os.environ["EWL_GEMMA_NUM_CTX"] = "16384"
+        os.environ["SLENS_GEMMA_NUM_CTX"] = "16384"
         try:
             judges.create("gemma")
             check("a window larger than Gemma 2's own 8,192 is refused", False, "no exception")
         except ValueError:
             check("a window larger than Gemma 2's own 8,192 is refused", True)
     finally:
-        del os.environ["EWL_GEMMA_NUM_CTX"]
+        del os.environ["SLENS_GEMMA_NUM_CTX"]
 
     _fake.done_reason = "length"
     _lj.sample("a comment", _long_prompt)
@@ -6006,8 +6006,8 @@ try:
             _labelled = list(_reader)
             _header = _reader.fieldnames
         check("the script runs and exits 0", _rc == 0, _rc)
-        _prev_temp = os.environ.get("EWL_GEMMA_TEMPERATURE")
-        os.environ["EWL_GEMMA_TEMPERATURE"] = "0.7"
+        _prev_temp = os.environ.get("SLENS_GEMMA_TEMPERATURE")
+        os.environ["SLENS_GEMMA_TEMPERATURE"] = "0.7"
         try:
             with contextlib.redirect_stderr(io.StringIO()):
                 classify_gemma.main([_in, "--output", os.path.join(tmp, "t07.csv"),
@@ -6017,11 +6017,11 @@ try:
             _t_refused = "frozen" in str(_e)
         finally:
             if _prev_temp is None:
-                os.environ.pop("EWL_GEMMA_TEMPERATURE", None)
+                os.environ.pop("SLENS_GEMMA_TEMPERATURE", None)
             else:
-                os.environ["EWL_GEMMA_TEMPERATURE"] = _prev_temp
-        check("ewl-gemma refuses a non-zero EWL_GEMMA_TEMPERATURE (it is the frozen arm)", _t_refused)
-        check("it writes exactly the columns ewl-classify writes, after the input's own",
+                os.environ["SLENS_GEMMA_TEMPERATURE"] = _prev_temp
+        check("slens-gemma refuses a non-zero SLENS_GEMMA_TEMPERATURE (it is the frozen arm)", _t_refused)
+        check("it writes exactly the columns slens-classify writes, after the input's own",
               _header == ["comment_id", "story", "body"] + classify.EXTRA_COLUMNS, _header)
         check("rows come back in the input's order, with the blank-comment row left out",
               [r["comment_id"] for r in _labelled] == ["a", "b", "c", "d"],
@@ -6056,7 +6056,7 @@ try:
               os.path.exists(_out + ".run.json"))
         with open(_out + ".run.json", encoding="utf-8") as _rf:
             _rec = json.load(_rf)
-        from ewl import corpus as _corp_g
+        from sentiment_lens import corpus as _corp_g
         check("the record carries the input hash, the model, the prompt hashes and the examples",
               _rec["input"]["sha256"] == _corp_g.content_hash(_in)
               and _rec["domain_judge"]["spec"] == "gemma:" + _TAG
@@ -6120,7 +6120,7 @@ try:
                     _plain_refused = False
                 except SystemExit as _pe:
                     _plain_refused = "no `sentiment` and `story` columns" in str(_pe)
-            check("a fixed-examples file without ratings is refused by ewl-gemma, and the line says NO ratings",
+            check("a fixed-examples file without ratings is refused by slens-gemma, and the line says NO ratings",
                   _plain_refused and "NO ratings" in _err_plain.getvalue(), _err_plain.getvalue()[-300:])
             with contextlib.redirect_stderr(io.StringIO()) as _err_off:
                 classify_gemma.main([_in, "--output", os.path.join(tmp, "plain_off.csv"),
@@ -6150,7 +6150,7 @@ try:
         finally:
             taxonomy.reset_fixed_examples(_orig_fixed_g)
 
-        # A cache holding an empty reply is refused, as on ewl-classify.
+        # A cache holding an empty reply is refused, as on slens-classify.
         _bad_cache = os.path.join(tmp, "bad.jsonl")
         with open(_bad_cache, "w", encoding="utf-8") as _bc:
             _bc.write(json.dumps({"key": "k", "reply": ""}) + "\n")
@@ -6187,23 +6187,23 @@ try:
 finally:
     gemma_local.GemmaJudge._make_client = _real_make_client
 
-_help = subprocess.run([sys.executable, "-m", "ewl.label.classify_gemma", "--help"],
+_help = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify_gemma", "--help"],
                        capture_output=True, text=True, env=env)
-check("ewl-gemma --help works with the ollama package not installed",
+check("slens-gemma --help works with the ollama package not installed",
       _help.returncode == 0 and "Q4_0" in _help.stdout, _help.stderr[-300:])
 _pyproject = (pathlib.Path(__file__).resolve().parent.parent / "pyproject.toml").read_text(encoding="utf-8")
-check("the ewl-gemma console script is declared and points at a real function",
-      'ewl-gemma' in _pyproject and 'ewl.label.classify_gemma:main' in _pyproject
+check("the slens-gemma console script is declared and points at a real function",
+      'slens-gemma' in _pyproject and 'sentiment_lens.label.classify_gemma:main' in _pyproject
       and callable(classify_gemma.main))
 
 # CI's "console scripts are wired up" step lists the scripts by hand, so a new one
-# can be declared in pyproject.toml and never run there (ewl-adjudicate was missed).
+# can be declared in pyproject.toml and never run there (slens-adjudicate was missed).
 import re as _re_ci
-_declared_scripts = set(_re_ci.findall(r"^(ewl-[a-z-]+)\s*=", _pyproject, _re_ci.M))
+_declared_scripts = set(_re_ci.findall(r"^(slens-[a-z-]+)\s*=", _pyproject, _re_ci.M))
 _ci_yml = (pathlib.Path(__file__).resolve().parent.parent / ".github" / "workflows"
            / "test.yml").read_text(encoding="utf-8")
 _ci_loop = _re_ci.search(r"for cmd in (.*?); do", _ci_yml, _re_ci.S)
-_ci_scripts = set(_re_ci.findall(r"ewl-[a-z-]+", _ci_loop.group(1))) if _ci_loop else set()
+_ci_scripts = set(_re_ci.findall(r"slens-[a-z-]+", _ci_loop.group(1))) if _ci_loop else set()
 check("CI runs --help for every console script pyproject.toml declares",
       _declared_scripts and _declared_scripts == _ci_scripts,
       f"declared, not in CI: {sorted(_declared_scripts - _ci_scripts)}; "
@@ -6317,8 +6317,8 @@ finally:
     gemma_local.GemmaJudge._make_client = _real_make_client
 
 print("\nbatches.py: splitting a corpus and checking the labelled batches")
-from ewl.collect import batches as _batches
-from ewl import corpus as _corp_b
+from sentiment_lens.collect import batches as _batches
+from sentiment_lens import corpus as _corp_b
 
 with tempfile.TemporaryDirectory() as _tb:
     _src = os.path.join(_tb, "corpus.csv")
@@ -6374,7 +6374,7 @@ with tempfile.TemporaryDirectory() as _tb:
         _refused = "more than once" in str(_e)
     check("a corpus with a repeated comment_id is refused", _refused)
 
-    _env_b = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _env_b = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
 
     # The real corpus size, at the default batch size, from the command line (so the
     # argparse default is what is tested). Ordered by story in four blocks, as the real
@@ -6388,7 +6388,7 @@ with tempfile.TemporaryDirectory() as _tb:
             _w.writerow([f"c{_i:05d}", _stories[_i * 4 // _n_big], "x"])
     _big_runs = []
     for _name in ("big1", "big2"):
-        _p = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "split", _big,
+        _p = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "split", _big,
                              "--out-dir", os.path.join(_tb, _name)],
                             capture_output=True, text=True, env=_env_b)
         assert _p.returncode == 0, _p.stderr[-400:]
@@ -6430,7 +6430,7 @@ with tempfile.TemporaryDirectory() as _tb:
         _out = os.path.join(_d1, "labelled", batch["file"])
         os.makedirs(os.path.dirname(_out), exist_ok=True)
         return subprocess.run(
-            [sys.executable, "-m", "ewl.label.classify", os.path.join(_d1, "inputs", batch["file"]),
+            [sys.executable, "-m", "sentiment_lens.label.classify", os.path.join(_d1, "inputs", batch["file"]),
              "--judge", "stub", "--votes", "1", "--no-cache", "--output", _out, *extra],
             capture_output=True, text=True, env=_env_b)
 
@@ -6447,11 +6447,11 @@ with tempfile.TemporaryDirectory() as _tb:
     _cmds = [_batches.command_for(_d1, s["entry"], "--fixed-examples f.csv")
              for s in _batches.status_lines(_d1, _m1)]
     check("the printed commands name the batch, its output, one shared cache and the flags",
-          len(_cmds) == 5 and all("ewl-gemma" in c and "--fixed-examples f.csv" in c
+          len(_cmds) == 5 and all("slens-gemma" in c and "--fixed-examples f.csv" in c
                                   and "gemma_cache.jsonl" in c for c in _cmds), _cmds[0])
 
     def _commands(out_dir, *flags):
-        _p = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "commands", out_dir,
+        _p = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "commands", out_dir,
                              *flags], capture_output=True, text=True, env=_env_b)
         return _p.returncode, [line for line in _p.stdout.splitlines() if line.strip()], _p.stderr
 
@@ -6461,7 +6461,7 @@ with tempfile.TemporaryDirectory() as _tb:
           and all(f"batch_{n:03d}_of_085.csv" in line and "inputs" in line for n, line in zip(range(1, 6), _lines)),
           _lines)
     check("and says how many of how many it printed (stderr, so run_all.sh holds commands only)",
-          "first 5 of 85" in _err and all(line.startswith("ewl-gemma ") for line in _lines), _err)
+          "first 5 of 85" in _err and all(line.startswith("slens-gemma ") for line in _lines), _err)
     _rc, _lines, _err = _commands(_d1, "--first", "0")
     check("commands --first 0 is refused", _rc == 2 and not _lines, _err)
 
@@ -6606,13 +6606,13 @@ with tempfile.TemporaryDirectory() as _tb:
           == sum(b["blank_body_rows"] for b in _m1["batches"] if b["number"] != 3),
           _prec["result"])
     _pdash = os.path.join(_tb, "so_far.json")
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.export_dashboard", _prog, "--output",
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", _prog, "--output",
                          _pdash, "--allow-unvalidated", "--corpus", _src],
                         capture_output=True, text=True, env=_env_b)
-    check("ewl-export-dashboard --corpus refuses the progress file, though its input hash is the corpus's",
+    check("slens-export-dashboard --corpus refuses the progress file, though its input hash is the corpus's",
           _p.returncode != 0 and "PARTIAL progress file" in _p.stderr and not os.path.exists(_pdash),
           _p.stderr[-400:])
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.export_dashboard", _prog, "--output",
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", _prog, "--output",
                          _pdash, "--allow-unvalidated"], capture_output=True, text=True, env=_env_b)
     _pd = json.load(open(_pdash, encoding="utf-8")) if os.path.exists(_pdash) else {}
     check("without --corpus it warns and stamps the export partial in its provenance",
@@ -6630,7 +6630,7 @@ with tempfile.TemporaryDirectory() as _tb:
               and "of ${partial.batches_total" in _page_b and "the whole corpus.</strong>" in _page_b)
         check("and the intro's comment count says it is the partial count",
               "(${stories})${partialNote}." in _page_b and "<strong>a partial run</strong>: the ${totalC" in _page_b)
-    _p = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "check", _d1, "--partial"],
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "check", _d1, "--partial"],
                         capture_output=True, text=True, env=_env_b)
     check("--partial without --merge-to is refused", _p.returncode == 2, _p.stderr[-200:])
     _label(_m1["batches"][2])
@@ -6654,14 +6654,14 @@ with tempfile.TemporaryDirectory() as _tb:
     check("--partial with no batch finished writes nothing",
           _batches.cmd_check(_PE) == 1 and not os.path.exists(_PE.merge_to))
 
-    _p = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "status", _d1],
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "status", _d1],
                         capture_output=True, text=True, env=_env_b)
     check("status runs from the command line and reports all five done",
           _p.returncode == 0 and "done 5" in _p.stdout, _p.stdout + _p.stderr)
 
 print("\ndomain prompt: the story's factual background, after the examples (decided 2026-10-07)")
-from ewl.label import sentiment as _sdc
-from ewl.label import instrument as _idc
+from sentiment_lens.label import sentiment as _sdc
+from sentiment_lens.label import instrument as _idc
 
 _ex = [("a comment", "none")]
 _plain = taxonomy.build_prompt(_ex)
@@ -6732,20 +6732,20 @@ try:
 finally:
     taxonomy.configure_domain_context("facts")
 
-from ewl.collect import batches as _bdc
+from sentiment_lens.collect import batches as _bdc
 _fp1 = _bdc._fingerprint({"prompts_sha256": {"domain": "d", "domain_by_story": {"luigi": "1"}}})
 _fp2 = _bdc._fingerprint({"prompts_sha256": {"domain": "d", "domain_by_story": {"luigi": "2"}}})
-check("ewl-batches refuses to mix batches whose per-story domain prompts differ",
+check("slens-batches refuses to mix batches whose per-story domain prompts differ",
       _fp1 != _fp2 and _fp1["domain prompts by story"] != _fp2["domain prompts by story"])
 
 print("\nanthropic_batch.py: the Batch API arm (fake service, synthetic comments, no network)")
 import datetime
 import re as _re_ab
 import types as _tyb
-from ewl.label import anthropic_batch as _ab
-from ewl.label import classify as _clsb
-from ewl.label import instrument as _instr_ab
-from ewl.label import sentiment as _sent_ab
+from sentiment_lens.label import anthropic_batch as _ab
+from sentiment_lens.label import classify as _clsb
+from sentiment_lens.label import instrument as _instr_ab
+from sentiment_lens.label import sentiment as _sent_ab
 
 
 class _World:
@@ -6997,7 +6997,7 @@ try:
               _err[-300:])
         with open(_labelled, newline="", encoding="utf-8-sig") as _f:
             _lab = list(csv.DictReader(_f))
-        check("replay --partial: the rows carry the ewl-classify columns, in order",
+        check("replay --partial: the rows carry the slens-classify columns, in order",
               len(_lab) == 10 and list(_lab[0].keys())[-len(_clsb.EXTRA_COLUMNS):] == _clsb.EXTRA_COLUMNS)
         _by_id = {r["comment_id"]: r for r in _lab}
         check("replay: a refused comment is labelled as the live path labels it (a parse failure), not left out",
@@ -7008,7 +7008,7 @@ try:
               and _by_id["c08"]["domain_parse_failure"] == "0", _by_id.get("c08"))
         _rec = json.load(open(_labelled + ".run.json", encoding="utf-8"))
         check("replay: the run record names the batch tool, the batch ids and the model, and 0 live calls",
-              _rec["result"]["collected_by"] == "ewl-anthropic-batch"
+              _rec["result"]["collected_by"] == "slens-anthropic-batch"
               and [b["id"] for b in _rec["result"]["batches"]] == [b["id"] for b in _man["batches"]]
               and _rec["domain_judge"]["spec"] == "anthropic:claude-haiku-4-5"
               and _rec["result"]["live_calls"] == 0, _rec["result"].get("live_calls"))
@@ -7055,13 +7055,13 @@ try:
         check("a prompt edit after submit: submit, replay and status --check-cache all refuse, and nothing is sent",
               all(m and "differ" in m for m in (_sub_msg, _rep_msg, _chk_msg)) and _world.created == _created_before,
               (_sub_msg, _rep_msg, _chk_msg))
-        os.environ["EWL_ANTHROPIC_EFFORT"] = "low"
+        os.environ["SLENS_ANTHROPIC_EFFORT"] = "low"
         try:
             _eff_msg = _refusal("submit", _src, "--out-dir", _out_dir, "--sample", "12", "--seed", "1",
                                 "--max-batch-requests", "5", *_common)
         finally:
-            del os.environ["EWL_ANTHROPIC_EFFORT"]
-        check("EWL_ANTHROPIC_EFFORT set on one run and not the other is refused (it changes every cache key)",
+            del os.environ["SLENS_ANTHROPIC_EFFORT"]
+        check("SLENS_ANTHROPIC_EFFORT set on one run and not the other is refused (it changes every cache key)",
               _eff_msg and "cache specs" in _eff_msg and _world.created == _created_before, _eff_msg)
         _man = json.load(open(os.path.join(_out_dir, "batch_manifest.json"), encoding="utf-8"))
         check("the manifest records both judges' cache specs and the no-story prompt hashes",
@@ -7207,7 +7207,7 @@ try:
               _m_w5 and float(_m_w5.group(1).replace(",", "")) < float(_m_w.group(1).replace(",", ""))
               and "1.25x the input price at --ttl 5m" in _err_s5 and "no hits" not in _err_h, _err_s5[-300:])
 
-        # ---- on a clean corpus, batch replay == live ewl-classify, row for row
+        # ---- on a clean corpus, batch replay == live slens-classify, row for row
         _clean = os.path.join(_tb, "clean.csv")
         with open(_clean, "w", newline="", encoding="utf-8-sig") as _f:
             _w = csv.DictWriter(_f, fieldnames=["comment_id", "story", "source", "body"])
@@ -7229,7 +7229,7 @@ try:
         _install_fake_anthropic(_world_c)
         _live_out = os.path.join(_tb, "live.csv")
         _saved_argv = sys.argv
-        sys.argv = ["ewl-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
+        sys.argv = ["slens-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
                     "--sentiment", "llm:anthropic:claude-haiku-4-5", "--votes", "1",
                     "--cache", os.path.join(_tb, "live_cache.jsonl"), "--output", _live_out]
         try:
@@ -7238,7 +7238,7 @@ try:
         finally:
             sys.argv = _saved_argv
         _rows = lambda path: list(csv.DictReader(open(path, newline="", encoding="utf-8-sig")))
-        check("clean corpus: the batch replay and a live ewl-classify give the SAME rows (every column)",
+        check("clean corpus: the batch replay and a live slens-classify give the SAME rows (every column)",
               _rc_replay == 0 and _rows(_replayed) == _rows(_live_out) and len(_rows(_live_out)) == 8,
               (len(_rows(_replayed)), len(_rows(_live_out))))
         _cmp_err = io.StringIO()
@@ -7287,7 +7287,7 @@ try:
         check("--cache-only: a missing reply raises CacheMiss and makes no API call",
               _refused and len(_world_c.live) == _calls_before)
         _sys_argv = sys.argv
-        sys.argv = ["ewl-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
+        sys.argv = ["slens-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
                     "--sentiment", "llm:anthropic:claude-haiku-4-5", "--votes", "1",
                     "--cache", os.path.join(_tb, "never_filled.jsonl"), "--cache-only",
                     "--output", os.path.join(_tb, "co.csv")]
@@ -7299,11 +7299,11 @@ try:
             _code = _se.code
         finally:
             sys.argv = _sys_argv
-        check("ewl-classify --cache-only: stops with exit 2 and says nothing was called, instead of paying",
+        check("slens-classify --cache-only: stops with exit 2 and says nothing was called, instead of paying",
               _code == 2 and "--cache-only" in _co_err.getvalue() and len(_world_c.live) == _calls_before,
               (_code, _co_err.getvalue()[-200:]))
         _cached_run = os.path.join(_tb, "co_ok.csv")
-        sys.argv = ["ewl-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
+        sys.argv = ["slens-classify", _clean, "--judge", "anthropic:claude-haiku-4-5",
                     "--sentiment", "llm:anthropic:claude-haiku-4-5", "--votes", "1",
                     "--cache", os.path.join(_tb, "live_cache.jsonl"), "--cache-only", "--output", _cached_run]
         try:
@@ -7311,7 +7311,7 @@ try:
                 _clsb.main()
         finally:
             sys.argv = _sys_argv
-        check("ewl-classify --cache-only: with every reply cached it labels the corpus with no calls",
+        check("slens-classify --cache-only: with every reply cached it labels the corpus with no calls",
               _rows(_cached_run) == _rows(_live_out) and len(_world_c.live) == _calls_before)
 
         try:
@@ -7359,9 +7359,9 @@ check("batch cost is half the list price for the same tokens; a cache write cost
 print("\nfixed examples with sentiment: the same set teaches both labels")
 import re as _re_sx
 import types as _tyx
-from ewl.label import sentiment as _sx
-from ewl.label import combined as _cx
-from ewl.label import instrument as _ix
+from sentiment_lens.label import sentiment as _sx
+from sentiment_lens.label import combined as _cx
+from sentiment_lens.label import instrument as _ix
 
 _orig_fx = list(taxonomy.FIXED_EXAMPLES)
 _SX_ROWS = [
@@ -7467,7 +7467,7 @@ with tempfile.TemporaryDirectory() as _tx:
         taxonomy.reset_fixed_examples(_orig_fx)
 
     # ---- the run record, and the scorecard leaving the examples out
-    _env_s = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _env_s = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
     _gold = os.path.join(_tx, "gold.csv")
     with open(_gold, "w", newline="", encoding="utf-8-sig") as _f:
         _w = csv.writer(_f)
@@ -7477,37 +7477,37 @@ with tempfile.TemporaryDirectory() as _tx:
                                             ("g9", "A ninth plain remark", "none", "0", "musk")]):
             _w.writerow([_r[0], _r[4], f"v{_i}", _r[1], _r[2], _r[3], "0.5"])
     _out = os.path.join(_tx, "classified.csv")
-    _p = subprocess.run([sys.executable, "-m", "ewl.label.classify", _gold, "--judge", "stub", "--votes", "1",
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _gold, "--judge", "stub", "--votes", "1",
                          "--no-cache", "--fixed-examples", _p_rated, "--output", _out],
                         capture_output=True, text=True, env=_env_s)
     _rec = json.load(open(_out + ".run.json", encoding="utf-8")) if os.path.exists(_out + ".run.json") else {}
     check("the run record notes the ratings and stories by id, never the text",
           _p.returncode == 0 and _rec.get("fixed_examples", {}).get("ratings") == [2, 2, 0, 4, 1, -1]
           and "She pays no tax" not in json.dumps(_rec), _p.stderr[-300:])
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "sentiment", _gold, "--arm", "llm:stub",
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "sentiment", _gold, "--arm", "llm:stub",
                          "--fixed-examples", _p_rated], capture_output=True, text=True, env=_env_s)
-    check("ewl-evaluate sentiment leaves the six worked examples out of scoring",
+    check("slens-evaluate sentiment leaves the six worked examples out of scoring",
           "left out of scoring" in _p.stderr and "6 comment(s) left out" in _p.stderr, _p.stderr[-400:])
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "sentiment", _gold, "--arm", "llm:stub"],
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "sentiment", _gold, "--arm", "llm:stub"],
                         capture_output=True, text=True, env=_env_s)
     check("without --fixed-examples nothing is left out", "left out of scoring" not in _p.stderr, _p.stderr[-300:])
-    # The ratings refusal lives in instrument.apply, so ewl-evaluate meets it as ewl-gemma does.
+    # The ratings refusal lives in instrument.apply, so slens-evaluate meets it as slens-gemma does.
     _plain_x = os.path.join(_tx, "domainonly.csv")
     for _cmd, _arm in (("sentiment", "llm:stub"), ("scorecard", "stub/fixed")):
-        _p = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", _cmd, _gold, "--arm", _arm,
+        _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", _cmd, _gold, "--arm", _arm,
                              "--fixed-examples", _plain_x], capture_output=True, text=True, env=_env_s)
-        check(f"ewl-evaluate {_cmd} refuses a fixed-examples file without ratings",
+        check(f"slens-evaluate {_cmd} refuses a fixed-examples file without ratings",
               _p.returncode != 0 and "no `sentiment` and `story` columns" in _p.stderr, _p.stderr[-300:])
-        _p = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", _cmd, _gold, "--arm", _arm,
+        _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", _cmd, _gold, "--arm", _arm,
                              "--fixed-examples", _plain_x, "--sentiment-examples", "off"],
                             capture_output=True, text=True, env=_env_s)
-        check(f"ewl-evaluate {_cmd} --sentiment-examples off lets a ratings-less file through",
+        check(f"slens-evaluate {_cmd} --sentiment-examples off lets a ratings-less file through",
               _p.returncode == 0 and "no `sentiment` and `story` columns" not in _p.stderr, _p.stderr[-300:])
 
 
 print("\nbatches and gemma: the model build is recorded and compared")
-from ewl.collect import batches as _bt
-from ewl.label import gemma_local as _gl
+from sentiment_lens.collect import batches as _bt
+from sentiment_lens.label import gemma_local as _gl
 _base_rec = {"domain_judge": {"spec": "gemma", "model": "gemma2:27b"}, "fixed_examples": {"source": "file", "sha256": "abc"},
              "model_build": {"digest": "d1", "server_version": "0.5.1"}}
 _same = _bt._fingerprint(dict(_base_rec))
@@ -7541,7 +7541,7 @@ def _raised(fn, exc):
     return False
 
 print("\nadjudicate.py: majority rule for the comments every coder coded")
-from ewl.analyse import adjudicate as _adj
+from sentiment_lens.analyse import adjudicate as _adj
 
 _S = _adj.resolve_domain
 check("domain: all three agree", _S([{"economics"}] * 3)[:2] == (["economics"], "majority"))
@@ -7612,7 +7612,7 @@ with tempfile.TemporaryDirectory() as _ta:
             _w.writerow([_cid])
     _review = os.path.join(_ta, "review.csv")
     _resolved = os.path.join(_ta, "resolved.csv")
-    _run = lambda *extra: subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", *_paths,
+    _run = lambda *extra: subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", *_paths,
                                           "--core-ids", _core, "--extra-labels", "add", *extra],
                                          capture_output=True, text=True)
     _p1 = _run("--review-output", _review, "--output", _resolved)
@@ -7656,7 +7656,7 @@ with tempfile.TemporaryDirectory() as _ta:
           and _res["c6"]["hand_domain"] == "economics" and _res["c7"]["hand_domain"] == "economics, social"
           and _res["c8"]["hand_domain"] == "social" and _res["c9"]["hand_domain"] == "social"
           and _res["c10"]["hand_sentiment"] == "neutral", {k: (v["hand_domain"], v["hand_sentiment"]) for k, v in _res.items()})
-    check("the resolved file is in the shape `ewl-validate combine --adjudicated` reads",
+    check("the resolved file is in the shape `slens-validate combine --adjudicated` reads",
           set(["comment_id", "hand_domain", "hand_sentiment"]) <= set(next(iter(_res.values())).keys())
           and all(r["coder_notes"] == "adjudicated" for r in _res.values()))
     _g = {r["comment_id"]: r for r in csv.DictReader(open(_gold_out, newline="", encoding="utf-8-sig"))}
@@ -7664,10 +7664,10 @@ with tempfile.TemporaryDirectory() as _ta:
           _g["c2"]["hand_domain"] == "economics, social" and _g["c2"]["coder_notes"] == "adjudicated"
           and _g["other1"]["hand_domain"] == "none" and _g["other1"]["coder_notes"] == "" and len(_g) == 11)
     check("the gold step reports counts only", "text of c" not in _p2.stdout)
-    _p3 = subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", _paths[0], _paths[1], "--core-ids", _core],
+    _p3 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", _paths[0], _paths[1], "--core-ids", _core],
                          capture_output=True, text=True)
     check("fewer than three coder files is refused", _p3.returncode != 0)
-    _p3b = subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", *_paths, _paths[0], "--core-ids", _core],
+    _p3b = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", *_paths, _paths[0], "--core-ids", _core],
                           capture_output=True, text=True)
     check("four coder files are refused (the rule is 2-of-3)",
           _p3b.returncode != 0 and "exactly three" in _p3b.stderr)
@@ -7678,17 +7678,17 @@ with tempfile.TemporaryDirectory() as _ta:
         _w = csv.writer(_f)
         _w.writerow(["comment_id", "story", "body", "hand_domain", "hand_sentiment"])
         _w.writerow(["c1", "luigi", "x", "economics", "2"])
-    _p4 = subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", _paths[0], _paths[1], _short, "--core-ids", _core],
+    _p4 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", _paths[0], _paths[1], _short, "--core-ids", _core],
                          capture_output=True, text=True)
     check("a coder missing core comments is refused, naming the ids", _p4.returncode != 0 and "is missing" in _p4.stderr)
 
     # settings are bound to the review file; a mismatch is refused
-    _p5 = subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", *_paths, "--core-ids", _core,
+    _p5 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", *_paths, "--core-ids", _core,
                           "--decisions", _review, "--output", os.path.join(_ta, "x.csv"),
                           "--extra-labels", "ignore"], capture_output=True, text=True)
     check("step 2 is refused when --extra-labels differs from step 1",
           _p5.returncode != 0 and "differ" in _p5.stderr and not os.path.exists(os.path.join(_ta, "x.csv")), _p5.stderr)
-    _p5b = subprocess.run([sys.executable, "-m", "ewl.analyse.adjudicate", *_paths, "--core-ids", _core,
+    _p5b = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.adjudicate", *_paths, "--core-ids", _core,
                            "--decisions", _review, "--output", os.path.join(_ta, "x.csv"),
                            "--extra-labels", "add", "--sentiment-rule", "exact"], capture_output=True, text=True)
     check("step 2 is refused when --sentiment-rule differs from step 1", _p5b.returncode != 0 and "differ" in _p5b.stderr)
@@ -7742,9 +7742,9 @@ with tempfile.TemporaryDirectory() as _tv:
                              "sentiment_scorer": "vader",
                              "domain_democracy": "1" if _i == 0 else "0"})
                 _w.writerow(_row)
-    _env_v = dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234")
+    _env_v = dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234")
     _out_off = os.path.join(_tv, "off.json")
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.export_dashboard", _vc, "--output", _out_off,
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", _vc, "--output", _out_off,
                          "--allow-unvalidated", "--n-boot", "20"],
                         capture_output=True, text=True, env=_env_v)
     _off_text = open(_out_off, encoding="utf-8").read() if os.path.exists(_out_off) else ""
@@ -7759,7 +7759,7 @@ with tempfile.TemporaryDirectory() as _tv:
     check("export: the provenance says verbatim comments are not included",
           _off.get("provenance", {}).get("verbatim_comments_included") is False)
     _out_on = os.path.join(_tv, "on.json")
-    _p = subprocess.run([sys.executable, "-m", "ewl.analyse.export_dashboard", _vc, "--output", _out_on,
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.export_dashboard", _vc, "--output", _out_on,
                          "--allow-unvalidated", "--n-boot", "20", "--include-verbatim"],
                         capture_output=True, text=True, env=_env_v)
     _on = json.load(open(_out_on, encoding="utf-8"))
@@ -7809,7 +7809,7 @@ if project_file("dashboard/index.html"):
 
 
 print("\nbatches: prepare, verify and the split-time check")
-from ewl.collect import batches as _bp
+from sentiment_lens.collect import batches as _bp
 with tempfile.TemporaryDirectory() as _pd:
     _cols = ["comment_id", "story", "source", "body"]
     _full = [{"comment_id": f"c{i}", "story": ["luigi", "musk"][i % 2], "source": f"v{i % 5}",
@@ -7853,7 +7853,7 @@ with tempfile.TemporaryDirectory() as _pd:
     check("verify refuses a corpus whose header was replaced (a spreadsheet import)",
           any("no comment_id" in p for p in _bp.verify(_hp, _fp, [_gp])[0]))
     _out_ok, _out_bad = os.path.join(_pd, "b_ok"), os.path.join(_pd, "b_bad")
-    _r_ok = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "split", _op, "--full", _fp,
+    _r_ok = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "split", _op, "--full", _fp,
                             "--exclude", _gp, "--exclude", _ep, "--out-dir", _out_ok, "--batch-size", "20"],
                            capture_output=True, text=True)
     _man = json.load(open(os.path.join(_out_ok, "batches_manifest.json"), encoding="utf-8")) if _r_ok.returncode == 0 else {}
@@ -7861,13 +7861,13 @@ with tempfile.TemporaryDirectory() as _pd:
           _r_ok.returncode == 0 and "Checked against the full corpus: OK" in _r_ok.stdout
           and _man.get("provenance", {}).get("parent", {}).get("rows") == 40
           and _man["provenance"]["verified_against"]["excluded_files"][0]["file"] == "gold.csv", _r_ok.stderr[-300:])
-    _r_bad = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "split", _tp, "--full", _fp,
+    _r_bad = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "split", _tp, "--full", _fp,
                              "--exclude", _gp, "--exclude", _ep, "--out-dir", _out_bad],
                             capture_output=True, text=True)
     check("split --full refuses a corpus that is not the full corpus minus the exclusions, writing nothing",
           _r_bad.returncode != 0 and not os.path.exists(os.path.join(_out_bad, "batches_manifest.json")),
           _r_bad.stderr[-300:])
-    _r_noprov = subprocess.run([sys.executable, "-m", "ewl.collect.batches", "split", _fp,
+    _r_noprov = subprocess.run([sys.executable, "-m", "sentiment_lens.collect.batches", "split", _fp,
                                 "--out-dir", os.path.join(_pd, "b_plain"), "--batch-size", "20"],
                                capture_output=True, text=True)
     check("split without --full behaves as before (no check, no provenance block)",
@@ -7875,8 +7875,8 @@ with tempfile.TemporaryDirectory() as _pd:
               open(os.path.join(_pd, "b_plain", "batches_manifest.json"), encoding="utf-8")))
 
 print("\nthe domain prompt carries no stance wording")
-from ewl import taxonomy as _tx_ns
-from ewl.label import combined as _cb_ns
+from sentiment_lens import taxonomy as _tx_ns
+from sentiment_lens.label import combined as _cb_ns
 _old_ctx = _tx_ns.configure_domain_context()
 check("the Luigi background in the domain prompt is facts only: no word about stance",
       all("stance" not in _tx_ns.domain_story_context(_s) for _s in sentiment_mod.STORY_CONTEXT))
@@ -7886,11 +7886,11 @@ check("in the combined arm the stance-object sentence reaches the sentiment half
       and "stance toward that wealth" not in _cp_ns[:_cp_ns.index("For each comment")])
 check("the full Luigi paragraph the sentiment prompt shows still carries it",
       "its stance toward that wealth" in sentiment_mod.STORY_CONTEXT["luigi"])
-print("\ngemma: EWL_GEMMA_TEMPERATURE lifts the one-vote limit for a stability measurement; default unchanged")
-_old_t = os.environ.get("EWL_GEMMA_TEMPERATURE")
+print("\ngemma: SLENS_GEMMA_TEMPERATURE lifts the one-vote limit for a stability measurement; default unchanged")
+_old_t = os.environ.get("SLENS_GEMMA_TEMPERATURE")
 _real_make_client2 = gemma_local.GemmaJudge._make_client
 try:
-    os.environ.pop("EWL_GEMMA_TEMPERATURE", None)
+    os.environ.pop("SLENS_GEMMA_TEMPERATURE", None)
     _f0 = _FakeOllama()
     gemma_local.GemmaJudge._make_client = lambda self: _f0
     _j0 = judges.create("gemma", votes=3)
@@ -7899,7 +7899,7 @@ try:
           _j0.votes == 1 and len(_f0.calls) == 1 and _f0.calls[-1]["options"]["temperature"] == 0
           and _j0.cache_spec == "gemma:" + _TAG and "temperature" not in _j0.preflight_info,
           (_j0.votes, len(_f0.calls), _j0.cache_spec))
-    os.environ["EWL_GEMMA_TEMPERATURE"] = "0.7"
+    os.environ["SLENS_GEMMA_TEMPERATURE"] = "0.7"
     _f7 = _FakeOllama()
     gemma_local.GemmaJudge._make_client = lambda self: _f7
     _j7 = judges.create("gemma", votes=3)
@@ -7913,22 +7913,22 @@ try:
           _j7.cache_spec == "gemma:" + _TAG + "|temperature=0.7" and _j7.cache_spec != _j0.cache_spec)
     check("the run record's model_build names the temperature", _j7.preflight_info.get("temperature") == 0.7)
     for bad in ("hot", "-1", "3"):
-        os.environ["EWL_GEMMA_TEMPERATURE"] = bad
+        os.environ["SLENS_GEMMA_TEMPERATURE"] = bad
         try:
             judges.create("gemma", votes=3)
             _bad_ok = False
         except ValueError:
             _bad_ok = True
-        check(f"EWL_GEMMA_TEMPERATURE={bad} is refused", _bad_ok)
+        check(f"SLENS_GEMMA_TEMPERATURE={bad} is refused", _bad_ok)
 finally:
     gemma_local.GemmaJudge._make_client = _real_make_client2
     if _old_t is None:
-        os.environ.pop("EWL_GEMMA_TEMPERATURE", None)
+        os.environ.pop("SLENS_GEMMA_TEMPERATURE", None)
     else:
-        os.environ["EWL_GEMMA_TEMPERATURE"] = _old_t
+        os.environ["SLENS_GEMMA_TEMPERATURE"] = _old_t
 
 print(chr(10) + "batches: the fingerprint compares temperature and vote count")
-from ewl.collect import batches as _batches_fp
+from sentiment_lens.collect import batches as _batches_fp
 _fp_a = {"domain_judge": {"spec": "gemma", "model": "m", "votes": 1}, "model_build": {"digest": "d"}}
 _fp_b = {"domain_judge": {"spec": "gemma", "model": "m", "votes": 3},
          "model_build": {"digest": "d", "temperature": 0.7}}
@@ -7946,7 +7946,7 @@ with open(_pg_in, "w", newline="", encoding="utf-8-sig") as _h:
     for _i in range(205):
         _w.writerow({"comment_id": f"p{_i}", "platform": "youtube", "story": "jets", "source": "v1",
                      "author_hash": "a", "body": f"comment {_i}" if _i != 7 else ""})
-_pg_run = subprocess.run([sys.executable, "-m", "ewl.label.classify", _pg_in, "--judge", "stub",
+_pg_run = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _pg_in, "--judge", "stub",
                           "--sentiment", "llm:stub", "--votes", "1", "--no-cache",
                           "--output", os.path.join(_pg_dir, "out.csv")],
                          capture_output=True, text=True,
@@ -7959,13 +7959,13 @@ check("a blank-bodied row is not counted in the total (it is not labelled)",
 check("an estimate of the time left appears once there is enough to go on (200 comments)",
       "200 of 204 comments labelled" in _pg_run.stderr and "left" in _pg_run.stderr.split("200 of 204")[1].split("\n")[0],
       _pg_run.stderr[-500:])
-_pg_lim = subprocess.run([sys.executable, "-m", "ewl.label.classify", _pg_in, "--judge", "stub",
+_pg_lim = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _pg_in, "--judge", "stub",
                           "--sentiment", "llm:stub", "--votes", "1", "--no-cache", "--limit", "120",
                           "--output", os.path.join(_pg_dir, "out2.csv")],
                          capture_output=True, text=True,
                          env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
 check("--limit is the total shown", "100 of 120 comments labelled" in _pg_lim.stderr, _pg_lim.stderr[-400:])
-print("\nmodel agreement (ewl-agreement): pairwise kappa, alpha and shared errors on the gold set")
+print("\nmodel agreement (slens-agreement): pairwise kappa, alpha and shared errors on the gold set")
 _ENV_DV = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
 _ag_dir = tempfile.mkdtemp()
 _ag_hand_domain = ["social", "none", "economics", "social, economics", "none", "environment",
@@ -8001,7 +8001,7 @@ _wrong_domain = list(_ag_exact_domain)
 _wrong_domain[0] = "democracy"          # a shared error: A and B agree with each other, not hand
 _ag_a2 = _ag_write("modelA2", _wrong_domain, _ag_exact_sent)
 _ag_b2 = _ag_write("modelB2", _wrong_domain, _ag_exact_sent, parse_fail=(3,))
-_ag_run = subprocess.run([sys.executable, "-m", "ewl.analyse.agreement", "--model", f"A={_ag_a}",
+_ag_run = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.agreement", "--model", f"A={_ag_a}",
                           "--model", f"B={_ag_b}", "--bootstrap", "200"],
                          capture_output=True, text=True, env=_ENV_DV)
 check("identical models that match the hand codes give kappa 1.00 and alpha 1.00 on a harm category",
@@ -8010,7 +8010,7 @@ check("identical models that match the hand codes give kappa 1.00 and alpha 1.00
 check("the output holds statistics only, never comment text", "SECRET-AGREE" not in _ag_run.stdout)
 check("the sentiment judgement is reported with all five answers' agreement",
       "sentiment answer" in _ag_run.stdout and "alpha" in _ag_run.stdout.split("sentiment answer")[1])
-_ag_run2 = subprocess.run([sys.executable, "-m", "ewl.analyse.agreement", "--model", f"A={_ag_a2}",
+_ag_run2 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.agreement", "--model", f"A={_ag_a2}",
                            "--model", f"B={_ag_b2}", "--bootstrap", "200"],
                           capture_output=True, text=True, env=_ENV_DV)
 _ag_social = _ag_run2.stdout.split("=== harm category: social ===")[1].split("===")[0]
@@ -8020,13 +8020,13 @@ check("two models that agree with each other but not the hand codes are counted 
 check("a comment one model could not parse is left out and the count is printed",
       "9 of 10 comments have a usable answer" in _ag_social, _ag_social[:300])
 _ag_diff = _ag_write("shorter", _ag_exact_domain[:9], _ag_exact_sent[:9])
-_ag_run3 = subprocess.run([sys.executable, "-m", "ewl.analyse.agreement", "--model", f"A={_ag_a}",
+_ag_run3 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.agreement", "--model", f"A={_ag_a}",
                            "--model", f"C={_ag_diff}"], capture_output=True, text=True, env=_ENV_DV)
 check("files over different comments are refused", _ag_run3.returncode != 0
       and "not labelled over the same comments" in (_ag_run3.stderr + _ag_run3.stdout))
 
 print("\nclassify: the run reports its own speed and the thinking setting")
-from ewl.label import classify as _clf_time
+from sentiment_lens.label import classify as _clf_time
 check("durations read as people say them",
       [_clf_time.format_duration(x) for x in (45, 125, 3725, 45000)]
       == ["45 s", "2 min 05 s", "1 h 02 min", "12 h 30 min"],
@@ -8038,9 +8038,9 @@ with tempfile.TemporaryDirectory() as _td:
         _w.writeheader()
         _w.writerow({"comment_id": "t1", "story": "luigi", "body": "a comment"})
     _out_t = os.path.join(_td, "out.csv")
-    _pt = subprocess.run([sys.executable, "-m", "ewl.label.classify", _in_t, "--judge", "stub", "--sentiment",
+    _pt = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _in_t, "--judge", "stub", "--sentiment",
                           "llm:stub", "--votes", "1", "--no-cache", "--output", _out_t],
-                         capture_output=True, text=True, env=dict(os.environ, EWL_AUTHOR_SALT="test-salt-value-1234"))
+                         capture_output=True, text=True, env=dict(os.environ, SLENS_AUTHOR_SALT="test-salt-value-1234"))
     _rec_t = json.load(open(_out_t + ".run.json", encoding="utf-8"))
     check("the run record carries the labelling time and the thinking setting (None for a stub)",
           _pt.returncode == 0 and "labelling_seconds" in _rec_t["result"] and "thinking_setting" in _rec_t["result"]
@@ -8072,7 +8072,7 @@ check("the default projections are one constant", _clf_time.DEFAULT_PROJECTIONS 
 print("\nOpenAI arms: effort setting, prices, refusal, and the scorecard paths (fake client, no SDK needed)")
 import types as _types_oa
 import contextlib as _ctx_oa
-from ewl.analyse import evaluate as _ev_oa
+from sentiment_lens.analyse import evaluate as _ev_oa
 
 _calls_oa = []
 _reply_oa = {"text": "democracy"}
@@ -8104,7 +8104,7 @@ _fake_openai_module.OpenAI = _OAClient
 _had_openai = "openai" in sys.modules
 _real_openai = sys.modules.get("openai")
 sys.modules["openai"] = _fake_openai_module
-_old_env_oa = {k: os.environ.get(k) for k in ("EWL_OPENAI_REASONING_EFFORT", "EWL_OPENAI_PRICES")}
+_old_env_oa = {k: os.environ.get(k) for k in ("SLENS_OPENAI_REASONING_EFFORT", "SLENS_OPENAI_PRICES")}
 
 
 def _set_env_oa(**values):
@@ -8116,7 +8116,7 @@ def _set_env_oa(**values):
 
 
 try:
-    _set_env_oa(EWL_OPENAI_REASONING_EFFORT=None, EWL_OPENAI_PRICES=None)
+    _set_env_oa(SLENS_OPENAI_REASONING_EFFORT=None, SLENS_OPENAI_PRICES=None)
     _j_def = judges.create("openai:gpt-5-mini", votes=1)
     _j_def._sample("a comment", "a prompt", 0)
     check("default: reasoning_effort is minimal, as every earlier run sent",
@@ -8126,21 +8126,21 @@ try:
     check("default: the run record gets reasoning_effort=minimal",
           _j_def.thinking_setting() == "reasoning_effort=minimal")
 
-    _set_env_oa(EWL_OPENAI_REASONING_EFFORT="low")
+    _set_env_oa(SLENS_OPENAI_REASONING_EFFORT="low")
     _j_low = judges.create("openai:gpt-5-mini", votes=1)
     _j_low._sample("a comment", "a prompt", 0)
-    check("EWL_OPENAI_REASONING_EFFORT=low is sent", _calls_oa[-1].get("reasoning_effort") == "low")
+    check("SLENS_OPENAI_REASONING_EFFORT=low is sent", _calls_oa[-1].get("reasoning_effort") == "low")
     check("a non-default effort gets its own cache key, so answers are never replayed across efforts",
           _j_low.cache_spec == "openai:gpt-5-mini|reasoning_effort=low"
           and _j_low.cache_spec != _j_def.cache_spec)
     check("and the run record says so", _j_low.thinking_setting() == "reasoning_effort=low")
-    _set_env_oa(EWL_OPENAI_REASONING_EFFORT=None, EWL_OPENAI_PRICES="gpt-6.1-sol=2.00,10.00;gpt-6-luna=0.10,0.50")
+    _set_env_oa(SLENS_OPENAI_REASONING_EFFORT=None, SLENS_OPENAI_PRICES="gpt-6.1-sol=2.00,10.00;gpt-6-luna=0.10,0.50")
     _j_g6 = judges.create("openai:gpt-6.1-sol", votes=1)
     _j_g6._sample("c", "p", 0)
     check("gpt-6 models are treated as reasoning models: sent the effort setting, and it is recorded",
           _calls_oa[-1].get("reasoning_effort") == "minimal"
           and _j_g6.thinking_setting() == "reasoning_effort=minimal", _calls_oa[-1])
-    _set_env_oa(EWL_OPENAI_PRICES="gpt-test-model=3.00,12.50")
+    _set_env_oa(SLENS_OPENAI_PRICES="gpt-test-model=3.00,12.50")
     _j_test = judges.create("openai:gpt-test-model", votes=1)
     _j_test._sample("c", "p", 0)
     check("a model that is not a reasoning model is never sent the setting, and its key is unchanged",
@@ -8150,7 +8150,7 @@ try:
           abs(_j_def.cost_usd() - (1000 * 0.25 + 5 * 2.00) / 1e6) < 1e-9, _j_def.cost_usd())
 
     # a model that rejects the setting: stop, name the fix, never retry or fall back
-    _set_env_oa(EWL_OPENAI_REASONING_EFFORT=None)
+    _set_env_oa(SLENS_OPENAI_REASONING_EFFORT=None)
     _j_rej = judges.create("openai:gpt-5-mini", votes=1)
     _reject_oa["on"] = True
     _before = len(_calls_oa)
@@ -8162,33 +8162,33 @@ try:
     _reject_oa["on"] = False
     check("a 400 about reasoning_effort stops the run with the setting named and the fix stated",
           _stopped is not None and "reasoning_effort='minimal'" in _stopped
-          and "EWL_OPENAI_REASONING_EFFORT" in _stopped, _stopped)
+          and "SLENS_OPENAI_REASONING_EFFORT" in _stopped, _stopped)
     check("it is a permanent error (not retried), and no other setting was tried",
           not _j_rej._is_retryable(judges.ReasoningEffortRejected(_stopped or ""))
           and len(_calls_oa) - _before == 1, len(_calls_oa) - _before)
 
     # prices
-    _set_env_oa(EWL_OPENAI_PRICES=None)
+    _set_env_oa(SLENS_OPENAI_PRICES=None)
     try:
         judges.openai_price_for("gpt-unknown-1")
         _refused = False
     except judges.PriceUnavailable as _e:
-        _refused = "EWL_OPENAI_PRICES" in str(_e)
+        _refused = "SLENS_OPENAI_PRICES" in str(_e)
     check("an unpriced model is still refused, and the message says how to supply its price", _refused)
-    _set_env_oa(EWL_OPENAI_PRICES="gpt-unknown-1=3.00,12.50;gpt-other=1,2")
-    check("a price supplied in EWL_OPENAI_PRICES is used for a model not in the table",
+    _set_env_oa(SLENS_OPENAI_PRICES="gpt-unknown-1=3.00,12.50;gpt-other=1,2")
+    check("a price supplied in SLENS_OPENAI_PRICES is used for a model not in the table",
           judges.openai_price_for("gpt-unknown-1") == (3.0, 12.5)
           and judges.openai_price_for("gpt-other") == (1.0, 2.0))
     check("a table price is not overridden by the variable",
           judges.openai_price_for("gpt-5-mini") == judges._OPENAI_PRICES["gpt-5-mini"])
-    _set_env_oa(EWL_OPENAI_PRICES="gpt-unknown-1=three,12")
+    _set_env_oa(SLENS_OPENAI_PRICES="gpt-unknown-1=three,12")
     try:
         judges.openai_price_for("gpt-unknown-1")
         _bad = False
     except judges.PriceUnavailable as _e:
         _bad = "model=input,output" in str(_e)
     check("a malformed price variable stops the run instead of being skipped", _bad)
-    _set_env_oa(EWL_OPENAI_PRICES=None)
+    _set_env_oa(SLENS_OPENAI_PRICES=None)
 
     # the scorecard paths
     _dir_oa = tempfile.mkdtemp()
@@ -8198,7 +8198,7 @@ try:
     def _run_eval(*argv):
         buffer = io.StringIO()
         old_argv = sys.argv
-        sys.argv = ["ewl-evaluate", *argv]
+        sys.argv = ["slens-evaluate", *argv]
         try:
             with _ctx_oa.redirect_stdout(buffer), _ctx_oa.redirect_stderr(io.StringIO()):
                 code = _ev_oa.main()
@@ -8211,7 +8211,7 @@ try:
     _reply_oa["text"] = "democracy"
     _code, _out = _run_eval("scorecard", _gold_oa, "--arm", "openai:gpt-5-mini/fixed",
                             "--votes", "1", "--cache", os.path.join(_dir_oa, "c1.jsonl"))
-    check("ewl-evaluate scorecard --arm openai:gpt-5-mini/fixed runs and names the arm",
+    check("slens-evaluate scorecard --arm openai:gpt-5-mini/fixed runs and names the arm",
           _code in (0, None) and "openai:gpt-5-mini/fixed" in _out, (_code, _out[-400:]))
     _reply_oa["text"] = "democracy | 4"
     _code, _out = _run_eval("scorecard", _gold_oa, "--arm", "combined:openai:gpt-5-mini/fixed",
@@ -8229,7 +8229,7 @@ try:
     _reply_oa["text"] = "4"
     _code, _out = _run_eval("sentiment", _sgold_oa, "--arm", "llm:openai:gpt-5-mini",
                             "--cache", os.path.join(_dir_oa, "c3.jsonl"))
-    check("ewl-evaluate sentiment --arm llm:openai:gpt-5-mini runs and scores",
+    check("slens-evaluate sentiment --arm llm:openai:gpt-5-mini runs and scores",
           _code in (0, None) and "openai" in _out.lower(), (_code, _out[-400:]))
 finally:
     for _k, _v in _old_env_oa.items():
@@ -8248,7 +8248,7 @@ with open(_cs_in, "w", newline="", encoding="utf-8-sig") as _h:
         _w.writerow({"comment_id": f"m{_i}", "platform": "youtube", "story": "jets",
                      "source": "v1", "author_hash": "a", "body": f"comment {_i}"})
 _cs_run = subprocess.run(
-    [sys.executable, "-m", "ewl.label.classify", _cs_in, "--judge", "combined:stub",
+    [sys.executable, "-m", "sentiment_lens.label.classify", _cs_in, "--judge", "combined:stub",
      "--sentiment", "combined:stub", "--votes", "3", "--no-cache", "--concurrency", "2",
      "--output", os.path.join(_cs_dir, "out.csv")],
     capture_output=True, text=True, env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
@@ -8316,10 +8316,10 @@ _fake_anthropic.Anthropic = lambda *a, **k: _types_c.SimpleNamespace(messages=_C
 _had_anthropic = "anthropic" in sys.modules
 _real_anthropic = sys.modules.get("anthropic")
 sys.modules["anthropic"] = _fake_anthropic
-_env_keep_c = {k: os.environ.get(k) for k in ("EWL_ANTHROPIC_ALLOW_THINKING", "EWL_ANTHROPIC_EFFORT")}
+_env_keep_c = {k: os.environ.get(k) for k in ("SLENS_ANTHROPIC_ALLOW_THINKING", "SLENS_ANTHROPIC_EFFORT")}
 try:
-    os.environ.pop("EWL_ANTHROPIC_EFFORT", None)
-    os.environ.pop("EWL_ANTHROPIC_ALLOW_THINKING", None)
+    os.environ.pop("SLENS_ANTHROPIC_EFFORT", None)
+    os.environ.pop("SLENS_ANTHROPIC_ALLOW_THINKING", None)
     # 1. a model that is not sent a thinking field gets a thinking 400: stop at once, no loop
     _haiku = judges.create("anthropic:claude-haiku-4-5", votes=1)
     _calls_c.clear()
@@ -8343,9 +8343,9 @@ try:
           and _calls_c[1]["thinking"] == {"type": "disabled"}, [c.get("thinking") for c in _calls_c])
 
     # 3. ALLOW_THINKING applies only to a model that cannot have thinking turned off
-    os.environ["EWL_ANTHROPIC_ALLOW_THINKING"] = "1"
+    os.environ["SLENS_ANTHROPIC_ALLOW_THINKING"] = "1"
     _s2 = judges.create("anthropic:claude-sonnet-5-5", votes=1)
-    check("EWL_ANTHROPIC_ALLOW_THINKING is ignored for Sonnet 5.5: same cache key, same 256-token limit",
+    check("SLENS_ANTHROPIC_ALLOW_THINKING is ignored for Sonnet 5.5: same cache key, same 256-token limit",
           _s2.allow_thinking is False and "thinking=allowed" not in _s2.cache_spec and _s2.reply_limit == 256,
           (_s2.cache_spec, _s2.reply_limit))
     _o55 = judges.create("anthropic:claude-opus-5-5", votes=1)
@@ -8362,7 +8362,7 @@ try:
     _script_c["default"] = None
     check("a thinking-ON arm that gets a thinking 400 stops at once and never switches to an 'off' spelling",
           _o55_stop and len(_calls_c) == 1 and "thinking" not in _calls_c[0], len(_calls_c))
-    os.environ.pop("EWL_ANTHROPIC_ALLOW_THINKING", None)
+    os.environ.pop("SLENS_ANTHROPIC_ALLOW_THINKING", None)
 finally:
     for _k, _v in _env_keep_c.items():
         if _v is None:
@@ -8424,34 +8424,34 @@ _fake2 = _types_oa.ModuleType("openai")
 _fake2.OpenAI = _OA2Client
 _saved_openai2 = sys.modules.get("openai")
 sys.modules["openai"] = _fake2
-_keys130 = ("EWL_EXTERNAL_PROCESSORS", "EWL_OPENAI_PRICES", "EWL_OPENAI_REASONING_EFFORT")
+_keys130 = ("SLENS_EXTERNAL_PROCESSORS", "SLENS_OPENAI_PRICES", "SLENS_OPENAI_REASONING_EFFORT")
 _old130 = {k: os.environ.get(k) for k in _keys130}
 try:
-    os.environ["EWL_EXTERNAL_PROCESSORS"] = "openai"
-    os.environ.pop("EWL_OPENAI_PRICES", None)
-    os.environ.pop("EWL_OPENAI_REASONING_EFFORT", None)
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = "openai"
+    os.environ.pop("SLENS_OPENAI_PRICES", None)
+    os.environ.pop("SLENS_OPENAI_REASONING_EFFORT", None)
 
     # the gate
-    os.environ.pop("EWL_EXTERNAL_PROCESSORS")
+    os.environ.pop("SLENS_EXTERNAL_PROCESSORS")
     _built_oa["n"] = 0
     try:
         judges.create("openai:gpt-5", votes=1)
         _gate = None
     except judges.ExternalProcessorNotApproved as _e:
         _gate = str(_e)
-    check("without EWL_EXTERNAL_PROCESSORS the OpenAI judge refuses to be built, names the sign-off, and builds no client",
-          _gate is not None and "#100" in _gate and "EWL_EXTERNAL_PROCESSORS=openai" in _gate and _built_oa["n"] == 0,
+    check("without SLENS_EXTERNAL_PROCESSORS the OpenAI judge refuses to be built, names the sign-off, and builds no client",
+          _gate is not None and "#100" in _gate and "SLENS_EXTERNAL_PROCESSORS=openai" in _gate and _built_oa["n"] == 0,
           (_gate, _built_oa["n"]))
-    os.environ["EWL_EXTERNAL_PROCESSORS"] = "google"
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = "google"
     try:
         judges.create("openai:gpt-5", votes=1)
         _other = False
     except judges.ExternalProcessorNotApproved:
         _other = True
     check("approving a different provider does not approve OpenAI", _other)
-    os.environ["EWL_EXTERNAL_PROCESSORS"] = " OpenAI , google "
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = " OpenAI , google "
     check("the list is comma-separated and case-insensitive", judges.create("openai:gpt-5", votes=1) is not None)
-    os.environ["EWL_EXTERNAL_PROCESSORS"] = "openai"
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = "openai"
 
     # an unpriced model is refused when the judge is built, with no client and no request
     _built_oa["n"] = 0
@@ -8463,16 +8463,16 @@ try:
         _unp = True
     check("an unpriced model is refused when the judge is built: no client, no request",
           _unp and _built_oa["n"] == 0 and not _reqs_oa)
-    os.environ["EWL_OPENAI_PRICES"] = "gpt-5=oops"
+    os.environ["SLENS_OPENAI_PRICES"] = "gpt-5=oops"
     try:
         judges.create("openai:gpt-5", votes=1)
         _bad = False
     except judges.PriceUnavailable:
         _bad = True
     check("a malformed price variable is refused at build time even for a model in the table", _bad)
-    os.environ.pop("EWL_OPENAI_PRICES")
+    os.environ.pop("SLENS_OPENAI_PRICES")
 
-    # the same refusal through ewl-classify: before any comment is sent
+    # the same refusal through slens-classify: before any comment is sent
     _in130 = os.path.join(tempfile.mkdtemp(), "in.csv")
     with open(_in130, "w", newline="", encoding="utf-8") as _h:
         _h.write("comment_id,body\nc1,a comment\nc2,another comment\n")
@@ -8487,12 +8487,12 @@ try:
         _msg130 = str(_e)
     finally:
         sys.argv = _argv130
-    check("ewl-classify with an unpriced OpenAI model stops with the message before any request is made",
+    check("slens-classify with an unpriced OpenAI model stops with the message before any request is made",
           "No price on record" in _msg130 and not _reqs_oa, (_msg130[:120], len(_reqs_oa)))
 
     # a cached-input price
-    os.environ["EWL_OPENAI_PRICES"] = "gpt-6.1-sol=2.00,10.00,0.10;gpt-6-sol=2.00,10.00"
-    check("a third figure in EWL_OPENAI_PRICES is the cached-input price (here 5% of input); without one it is 10%",
+    os.environ["SLENS_OPENAI_PRICES"] = "gpt-6.1-sol=2.00,10.00,0.10;gpt-6-sol=2.00,10.00"
+    check("a third figure in SLENS_OPENAI_PRICES is the cached-input price (here 5% of input); without one it is 10%",
           abs(judges.openai_cached_ratio("gpt-6.1-sol") - 0.05) < 1e-9
           and abs(judges.openai_cached_ratio("gpt-6-sol") - 0.10) < 1e-9
           and judges.openai_price_for("gpt-6.1-sol") == (2.0, 10.0))
@@ -8500,33 +8500,33 @@ try:
     _sol.usage["cache_read_input_tokens"] = 1_000_000
     check("the cost accounting uses it: a million cached tokens at $2 and 5% saves $1.90, not $1.80",
           abs(_sol.cache_savings_usd() - 1.90) < 1e-6, _sol.cache_savings_usd())
-    os.environ.pop("EWL_OPENAI_PRICES")
+    os.environ.pop("SLENS_OPENAI_PRICES")
 
     # effort handling
-    os.environ["EWL_OPENAI_REASONING_EFFORT"] = "Low"
+    os.environ["SLENS_OPENAI_REASONING_EFFORT"] = "Low"
     _j = judges.create("openai:gpt-5", votes=1)
     check("the effort is lower-cased: 'Low' is sent as low, keyed as low, and named in the arm's spec",
           _j._effort() == "low" and _j.cache_spec.endswith("|reasoning_effort=low")
           and _j.spec == "openai:gpt-5@low", (_j._effort(), _j.cache_spec, _j.spec))
-    os.environ.pop("EWL_OPENAI_REASONING_EFFORT")
+    os.environ.pop("SLENS_OPENAI_REASONING_EFFORT")
     check("at the default effort the spec carries no suffix (existing arm names unchanged)",
           judges.create("openai:gpt-5", votes=1).spec == "openai:gpt-5")
-    os.environ["EWL_OPENAI_REASONING_EFFORT"] = "high"
+    os.environ["SLENS_OPENAI_REASONING_EFFORT"] = "high"
     check("a higher effort gets more room for hidden reasoning in the reply limit",
           judges.create("openai:gpt-5", votes=1).reply_limit == 4096)
-    os.environ["EWL_OPENAI_REASONING_EFFORT"] = "low"
-    os.environ["EWL_OPENAI_PRICES"] = "gpt-4.1-mini=0.40,1.60"
+    os.environ["SLENS_OPENAI_REASONING_EFFORT"] = "low"
+    os.environ["SLENS_OPENAI_PRICES"] = "gpt-4.1-mini=0.40,1.60"
     try:
         judges.create("openai:gpt-4.1-mini", votes=1)
         _nr = False
     except judges.SettingRefused as _e:
         _nr = "not a reasoning model" in str(_e)
-    os.environ.pop("EWL_OPENAI_PRICES", None)
+    os.environ.pop("SLENS_OPENAI_PRICES", None)
     check("an effort set for a model that is not a reasoning model is refused, not silently ignored", _nr)
-    os.environ.pop("EWL_OPENAI_REASONING_EFFORT")
+    os.environ.pop("SLENS_OPENAI_REASONING_EFFORT")
 
     # a rejected setting stops after ONE request, through sample() (the retry layer)
-    os.environ["EWL_OPENAI_PRICES"] = "gpt-5-reject=1.00,2.00"
+    os.environ["SLENS_OPENAI_PRICES"] = "gpt-5-reject=1.00,2.00"
     _rej = judges.create("openai:gpt-5-reject", votes=1)
     del _reqs_oa[:]
     try:
@@ -8559,7 +8559,7 @@ with open(_cc_in, "w", newline="", encoding="utf-8-sig") as _h:
 
 
 def _cc_run(*extra):
-    return subprocess.run([sys.executable, "-m", "ewl.label.classify", _cc_in, "--votes", "3", "--no-cache",
+    return subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _cc_in, "--votes", "3", "--no-cache",
                            "--concurrency", "2", "--output", os.path.join(_cc_dir, "o.csv"), *extra],
                           capture_output=True, text=True,
                           env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
@@ -8575,7 +8575,7 @@ check("a plain judge with a combined scorer is counted as 6 calls per comment (t
 
 print("\nevaluate --concurrency: the scorecard and sentiment loops can run comments in parallel")
 import time as _time_cc
-from ewl.analyse import evaluate as _ev_cc
+from sentiment_lens.analyse import evaluate as _ev_cc
 
 
 class _SlowJudge:
@@ -8671,15 +8671,15 @@ check("the irrelevant/uncodeable check also runs in parallel, with the same answ
 
 _cc_gold = os.path.join(tempfile.mkdtemp(), "gold.csv")
 write_fixture(_cc_gold)
-_cc_run = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", _cc_gold,
+_cc_run = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", _cc_gold,
                           "--arm", "stub/fixed", "--votes", "1", "--concurrency", "4"],
                          capture_output=True, text=True,
                          env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
-_cc_one = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", _cc_gold,
+_cc_one = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", _cc_gold,
                           "--arm", "stub/fixed", "--votes", "1"],
                          capture_output=True, text=True,
                          env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
-check("ewl-evaluate scorecard --concurrency 4 runs on the command line and matches the serial run's table",
+check("slens-evaluate scorecard --concurrency 4 runs on the command line and matches the serial run's table",
       _cc_run.returncode == 0 and _cc_one.returncode == 0
       and [l for l in _cc_run.stdout.splitlines() if l.startswith("| `")][:1]
       and [l.rsplit("|", 6)[0] for l in _cc_run.stdout.splitlines() if l.startswith("| `")][:1]
@@ -8748,14 +8748,14 @@ check("a local model (gemma or ollama) is capped at one worker whatever was aske
       and _ev_cc.effective_concurrency("anthropic:claude-sonnet-5-5", 8) == 8
       and _ev_cc.effective_concurrency("gemma:gemma2:27b", 1) == 1)
 
-_cc133 = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", _cc_gold,
+_cc133 = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", _cc_gold,
                          "--arm", "stub/fixed", "--votes", "1", "--concurrency", "4"],
                         capture_output=True, text=True,
                         env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
 check("the scorecard says what `mins` means and the concurrency each arm ran at",
       "wall-clock time at the concurrency shown" in _cc133.stdout and "stub" in _cc133.stdout.split("wall-clock")[1],
       _cc133.stdout[-500:])
-_cc133_one = subprocess.run([sys.executable, "-m", "ewl.analyse.evaluate", "scorecard", _cc_gold,
+_cc133_one = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "scorecard", _cc_gold,
                              "--arm", "stub/fixed", "--votes", "1"],
                             capture_output=True, text=True,
                             env=dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src")))
@@ -8805,8 +8805,8 @@ _g_google.genai = _g_genai
 _g_saved = {name: sys.modules.get(name) for name in ("google", "google.genai", "google.genai.types")}
 sys.modules.update({"google": _g_google, "google.genai": _g_genai,
                     "google.genai.types": _g_types_mod})
-_g_old_env = {k: os.environ.get(k) for k in ("EWL_GEMINI_THINKING_BUDGET", "EWL_GEMINI_THINKING_LEVEL",
-                                              "EWL_GOOGLE_PRICES", "EWL_EXTERNAL_PROCESSORS")}
+_g_old_env = {k: os.environ.get(k) for k in ("SLENS_GEMINI_THINKING_BUDGET", "SLENS_GEMINI_THINKING_LEVEL",
+                                              "SLENS_GOOGLE_PRICES", "SLENS_EXTERNAL_PROCESSORS")}
 
 
 def _g_env(**values):
@@ -8818,8 +8818,8 @@ def _g_env(**values):
 
 
 try:
-    _g_env(EWL_GEMINI_THINKING_BUDGET=None, EWL_GEMINI_THINKING_LEVEL=None, EWL_GOOGLE_PRICES=None,
-           EWL_EXTERNAL_PROCESSORS="openai,google")
+    _g_env(SLENS_GEMINI_THINKING_BUDGET=None, SLENS_GEMINI_THINKING_LEVEL=None, SLENS_GOOGLE_PRICES=None,
+           SLENS_EXTERNAL_PROCESSORS="openai,google")
     _gj = judges.create("google:gemini-3.1-pro", votes=1)
     _gj._sample("a comment", "a prompt", 0)
     _gcfg = _g_calls[-1]["config"].kwargs
@@ -8835,40 +8835,40 @@ try:
     check("a flash-lite model is likewise sent nothing by default",
           "thinking_config" not in _g_calls[-1]["config"].kwargs)
 
-    _g_env(EWL_GEMINI_THINKING_LEVEL="Low")
+    _g_env(SLENS_GEMINI_THINKING_LEVEL="Low")
     _gb = judges.create("google:gemini-3.1-pro", votes=1)
     _gb._sample("a comment", "a prompt", 0)
     _gbcfg = _g_calls[-1]["config"].kwargs
-    check("EWL_GEMINI_THINKING_LEVEL is sent (upper-cased) with the 1,024-token reply limit",
+    check("SLENS_GEMINI_THINKING_LEVEL is sent (upper-cased) with the 1,024-token reply limit",
           _gbcfg["thinking_config"].thinking_level == "LOW" and _gbcfg["max_output_tokens"] == 1024, _gbcfg)
     check("a level set by hand has its own cache key and is recorded",
           _gb.cache_spec == "google:gemini-3.1-pro|thinking_level=low"
           and _gb.cache_spec != _gj.cache_spec and _gb.thinking_setting() == "thinking_level=low")
-    _g_env(EWL_GEMINI_THINKING_LEVEL="high")
+    _g_env(SLENS_GEMINI_THINKING_LEVEL="high")
     _gh = judges.create("google:gemini-3.1-pro", votes=1)
     check("a higher level gets a larger reply limit", _gh.reply_limit == 4096)
-    _g_env(EWL_GEMINI_THINKING_LEVEL="lots")
+    _g_env(SLENS_GEMINI_THINKING_LEVEL="lots")
     try:
         judges.create("google:gemini-3.1-pro", votes=1)
         _gbad = False
     except judges.SettingRefused as _e:
         _gbad = "minimal, low, medium, high" in str(_e)
     check("a thinking level that is not one of the four stops the run", _gbad)
-    _g_env(EWL_GEMINI_THINKING_LEVEL=None, EWL_GEMINI_THINKING_BUDGET="0")
+    _g_env(SLENS_GEMINI_THINKING_LEVEL=None, SLENS_GEMINI_THINKING_BUDGET="0")
     try:
         judges.create("google:gemini-3.1-pro", votes=1)
         _gold = False
     except judges.SettingRefused as _e:
-        _gold = "EWL_GEMINI_THINKING_LEVEL" in str(_e)
-    check("the old EWL_GEMINI_THINKING_BUDGET is refused, pointing to the level", _gold)
-    _g_env(EWL_GEMINI_THINKING_BUDGET=None, EWL_EXTERNAL_PROCESSORS="openai")
+        _gold = "SLENS_GEMINI_THINKING_LEVEL" in str(_e)
+    check("the old SLENS_GEMINI_THINKING_BUDGET is refused, pointing to the level", _gold)
+    _g_env(SLENS_GEMINI_THINKING_BUDGET=None, SLENS_EXTERNAL_PROCESSORS="openai")
     try:
         judges.create("google:gemini-3.1-pro", votes=1)
         _ggate = False
     except judges.ExternalProcessorNotApproved:
         _ggate = True
-    check("without google in EWL_EXTERNAL_PROCESSORS the judge is not built", _ggate)
-    _g_env(EWL_EXTERNAL_PROCESSORS="openai,google")
+    check("without google in SLENS_EXTERNAL_PROCESSORS the judge is not built", _ggate)
+    _g_env(SLENS_EXTERNAL_PROCESSORS="openai,google")
     try:
         judges.create("google:gemini-unknown-1", votes=1)
         _gnp = False
@@ -8877,7 +8877,7 @@ try:
     check("an unpriced Gemini model is refused when the judge is built, before any request", _gnp)
 
     # a model that refuses a level that WAS sent: stop, name the fix, never retry or fall back
-    _g_env(EWL_GEMINI_THINKING_LEVEL="low")
+    _g_env(SLENS_GEMINI_THINKING_LEVEL="low")
     _grej = judges.create("google:gemini-3.1-pro", votes=1)
     _g_reject["on"] = True
     _gbefore = len(_g_calls)
@@ -8888,7 +8888,7 @@ try:
         _gmsg = str(_err)
     _g_reject["on"] = False
     check("a 400 about thinking stops the run with the setting named and the fix stated",
-          _gmsg is not None and "thinking_level=low" in _gmsg and "EWL_GEMINI_THINKING_LEVEL" in _gmsg,
+          _gmsg is not None and "thinking_level=low" in _gmsg and "SLENS_GEMINI_THINKING_LEVEL" in _gmsg,
           _gmsg)
     check("it is a permanent error (not retried), and no other setting was tried",
           not _grej._is_retryable(judges.ThinkingUnavailable(_gmsg or ""))
@@ -8899,30 +8899,30 @@ try:
         judges.google_price_for("gemini-unknown-1")
         _gr = False
     except judges.PriceUnavailable as _e:
-        _gr = "EWL_GOOGLE_PRICES" in str(_e)
+        _gr = "SLENS_GOOGLE_PRICES" in str(_e)
     check("an unpriced Gemini model is still refused, and the message says how to supply a price", _gr)
-    _g_env(EWL_GOOGLE_PRICES="gemini-unknown-1=1.5,9;gemini-other=0.5,2")
-    check("a price supplied in EWL_GOOGLE_PRICES is used, and a table price is not overridden",
+    _g_env(SLENS_GOOGLE_PRICES="gemini-unknown-1=1.5,9;gemini-other=0.5,2")
+    check("a price supplied in SLENS_GOOGLE_PRICES is used, and a table price is not overridden",
           judges.google_price_for("gemini-unknown-1") == (1.5, 9.0)
           and judges.google_price_for("gemini-3.1-pro") == judges._GOOGLE_PRICES["gemini-3.1-pro"])
-    _g_env(EWL_GOOGLE_PRICES="gemini-unknown-1=much,9")
+    _g_env(SLENS_GOOGLE_PRICES="gemini-unknown-1=much,9")
     try:
         judges.google_price_for("gemini-unknown-1")
         _gm = False
     except judges.PriceUnavailable as _e:
         _gm = "model=input,output" in str(_e)
     check("a malformed Gemini price variable stops the run", _gm)
-    _g_env(EWL_GOOGLE_PRICES=None)
+    _g_env(SLENS_GOOGLE_PRICES=None)
 
     # the scorecard paths (default thinking: the arm name carries no @level suffix)
-    _g_env(EWL_GEMINI_THINKING_LEVEL=None)
+    _g_env(SLENS_GEMINI_THINKING_LEVEL=None)
     _gdir = tempfile.mkdtemp()
     _ggold = os.path.join(_gdir, "gold.csv")
     write_fixture(_ggold)
     _g_reply["text"] = "democracy"
     _gcode, _gout = _run_eval("scorecard", _ggold, "--arm", "google:gemini-3.1-pro/fixed",
                               "--votes", "1", "--cache", os.path.join(_gdir, "c1.jsonl"))
-    check("ewl-evaluate scorecard --arm google:gemini-3.1-pro/fixed runs and names the arm",
+    check("slens-evaluate scorecard --arm google:gemini-3.1-pro/fixed runs and names the arm",
           _gcode in (0, None) and "google:gemini-3.1-pro/fixed" in _gout, (_gcode, _gout[-400:]))
     _g_reply["text"] = "democracy | 4"
     _gcode, _gout = _run_eval("scorecard", _ggold, "--arm", "combined:google:gemini-3.1-pro/fixed",
@@ -8932,7 +8932,7 @@ try:
     _g_reply["text"] = "4"
     _gcode, _gout = _run_eval("sentiment", _sgold_oa, "--arm", "llm:google:gemini-3.1-pro",
                               "--cache", os.path.join(_gdir, "c3.jsonl"))
-    check("ewl-evaluate sentiment --arm llm:google:gemini-3.1-pro runs and scores",
+    check("slens-evaluate sentiment --arm llm:google:gemini-3.1-pro runs and scores",
           _gcode in (0, None) and "google" in _gout.lower(), (_gcode, _gout[-400:]))
 finally:
     for _k, _v in _g_old_env.items():
@@ -8944,25 +8944,25 @@ finally:
             sys.modules[_name] = _mod
 
 print(chr(10) + "#130 round two: a table model keeps the table's cached rule, and the NOTE prints once")
-_prev_p = os.environ.get("EWL_OPENAI_PRICES")
-os.environ["EWL_OPENAI_PRICES"] = "gpt-5-mini=0.25,2.00,0.0125"
+_prev_p = os.environ.get("SLENS_OPENAI_PRICES")
+os.environ["SLENS_OPENAI_PRICES"] = "gpt-5-mini=0.25,2.00,0.0125"
 judges._TABLE_PRICE_NOTED.clear()
 with contextlib.redirect_stderr(io.StringIO()) as _note_err:
     for _ in range(6):
         judges.openai_price_for("gpt-5-mini")
 check("the NOTE about a price already in the table prints once, not on every read",
-      _note_err.getvalue().count("NOTE: EWL_OPENAI_PRICES") == 1, _note_err.getvalue())
+      _note_err.getvalue().count("NOTE: SLENS_OPENAI_PRICES") == 1, _note_err.getvalue())
 check("a cached price supplied for a model in the table is ignored, like its input and output prices",
       abs(judges.openai_cached_ratio("gpt-5-mini") - 0.1) < 1e-9)
 if _prev_p is None:
-    os.environ.pop("EWL_OPENAI_PRICES", None)
+    os.environ.pop("SLENS_OPENAI_PRICES", None)
 else:
-    os.environ["EWL_OPENAI_PRICES"] = _prev_p
+    os.environ["SLENS_OPENAI_PRICES"] = _prev_p
 
 print(chr(10) + "#131 round two: default model id, accepted levels, level in the arm name, reply limit per default level")
-_old_g = {k: os.environ.get(k) for k in ("EWL_GEMINI_THINKING_LEVEL", "EWL_EXTERNAL_PROCESSORS", "EWL_GOOGLE_PRICES")}
-os.environ["EWL_EXTERNAL_PROCESSORS"] = "openai,google"
-os.environ.pop("EWL_GEMINI_THINKING_LEVEL", None)
+_old_g = {k: os.environ.get(k) for k in ("SLENS_GEMINI_THINKING_LEVEL", "SLENS_EXTERNAL_PROCESSORS", "SLENS_GOOGLE_PRICES")}
+os.environ["SLENS_EXTERNAL_PROCESSORS"] = "openai,google"
+os.environ.pop("SLENS_GEMINI_THINKING_LEVEL", None)
 check("the default Gemini model is the id Google lists", judges.GeminiJudge.default_model == "gemini-3.1-pro-preview")
 check("every id the run book names is priced", all(m in judges._GOOGLE_PRICES for m in
       ("gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview")))
@@ -8973,7 +8973,7 @@ _fake_gt = _types_oa.ModuleType("google.genai.types"); _fake_g.genai = _fake_gen
 _saved_mods = {n: sys.modules.get(n) for n in ("google", "google.genai", "google.genai.types")}
 sys.modules.update({"google": _fake_g, "google.genai": _fake_genai, "google.genai.types": _fake_gt})
 try:
-    os.environ["EWL_GEMINI_THINKING_LEVEL"] = "minimal"
+    os.environ["SLENS_GEMINI_THINKING_LEVEL"] = "minimal"
     try:
         judges.create("google:gemini-3.8-flash", votes=1)
         _min_ok = False
@@ -8982,21 +8982,21 @@ try:
     check("minimal is refused when the model is built for a model that does not accept it", _min_ok)
     check("minimal is accepted for flash-lite, which thinks at minimal by default",
           judges.create("google:gemini-3.5-flash-lite", votes=1).thinking_level == "minimal")
-    os.environ["EWL_GEMINI_THINKING_LEVEL"] = "low"
+    os.environ["SLENS_GEMINI_THINKING_LEVEL"] = "low"
     check("a level set by hand is part of the arm's name", judges.create("google:gemini-3.8-flash", votes=1).spec == "google:gemini-3.8-flash@low")
-    os.environ.pop("EWL_GEMINI_THINKING_LEVEL")
+    os.environ.pop("SLENS_GEMINI_THINKING_LEVEL")
     check("with nothing set the arm name is plain", judges.create("google:gemini-3.8-flash", votes=1).spec == "google:gemini-3.8-flash")
     check("the default reply limit follows the model's own default level (pro high 4,096; flash medium 2,048; flash-lite minimal 1,024)",
           (judges.create("google:gemini-3.1-pro-preview", votes=1).reply_limit,
            judges.create("google:gemini-3.8-flash", votes=1).reply_limit,
            judges.create("google:gemini-3.5-flash-lite", votes=1).reply_limit) == (4096, 2048, 1024))
-    os.environ["EWL_GOOGLE_PRICES"] = "gemini-3.8-flash=0.1,0.2"
+    os.environ["SLENS_GOOGLE_PRICES"] = "gemini-3.8-flash=0.1,0.2"
     judges._TABLE_PRICE_NOTED.clear()
     with contextlib.redirect_stderr(io.StringIO()) as _g_note:
         _gj2 = judges.create("google:gemini-3.8-flash", votes=1)
         for _ in range(5):
             _gj2.cost_usd()
-    check("the NOTE about a Google price already in the table prints once", _g_note.getvalue().count("NOTE: EWL_GOOGLE_PRICES") == 1, _g_note.getvalue())
+    check("the NOTE about a Google price already in the table prints once", _g_note.getvalue().count("NOTE: SLENS_GOOGLE_PRICES") == 1, _g_note.getvalue())
     check("a combined Gemini judge records the inner thinking setting",
           "model default" in (judges.create("combined:google:gemini-3.8-flash", votes=1).thinking_setting() or ""))
 finally:
@@ -9069,8 +9069,8 @@ _e_had = "anthropic" in sys.modules
 _e_prev = sys.modules.get("anthropic")
 sys.modules["anthropic"] = _e_fake
 try:
-    from ewl.label import anthropic_batch as _e_batch
-    from ewl.label import classify as _e_classify
+    from sentiment_lens.label import anthropic_batch as _e_batch
+    from sentiment_lens.label import classify as _e_classify
     _e_dir = tempfile.mkdtemp()
     _e_cache = os.path.join(_e_dir, "live_cache.jsonl")
     _e_judge = judges.create("anthropic:claude-haiku-4-5", votes=1, cache_path=_e_cache)
@@ -9128,24 +9128,24 @@ def _r_classify(*extra):
     _out = os.path.join(_r_dir, "o.csv")
     if os.path.exists(_out):
         os.remove(_out)
-    _p = subprocess.run([sys.executable, "-m", "ewl.label.classify", _r_in, "--judge", "stub",
+    _p = subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _r_in, "--judge", "stub",
                          "--votes", "1", "--no-cache", "--output", _out, "--fixed-examples", _r_ex,
                          *extra], capture_output=True, text=True, env=_r_env)
     return _p.returncode, os.path.exists(_out), _p.stderr
 
 
 _r_llm = _r_classify("--sentiment", "llm:stub")
-check("ewl-classify with an llm: sentiment scorer refuses it before labelling anything",
+check("slens-classify with an llm: sentiment scorer refuses it before labelling anything",
       _r_llm[0] != 0 and not _r_llm[1] and "no `sentiment` and `story` columns" in _r_llm[2], _r_llm)
 _r_comb = _r_classify("--sentiment", "combined:stub")
 check("and so does a combined: scorer", _r_comb[0] != 0 and not _r_comb[1], _r_comb[0])
 _r_off = _r_classify("--sentiment", "llm:stub", "--sentiment-examples", "off")
-check("--sentiment-examples off still lets it run, as on ewl-gemma", _r_off[0] == 0 and _r_off[1], _r_off[2][-300:])
+check("--sentiment-examples off still lets it run, as on slens-gemma", _r_off[0] == 0 and _r_off[1], _r_off[2][-300:])
 _r_vader = _r_classify("--sentiment", "vader")
 check("VADER asks no model, so the file is accepted there", _r_vader[0] == 0 and _r_vader[1], _r_vader[2][-300:])
-_r_plan = subprocess.run([sys.executable, "-m", "ewl.label.anthropic_batch", "plan", _r_in,
+_r_plan = subprocess.run([sys.executable, "-m", "sentiment_lens.label.anthropic_batch", "plan", _r_in,
                           "--fixed-examples", _r_ex], capture_output=True, text=True, env=_r_env)
-check("ewl-anthropic-batch plan refuses it too (every request set includes the sentiment question)",
+check("slens-anthropic-batch plan refuses it too (every request set includes the sentiment question)",
       _r_plan.returncode != 0 and "no `sentiment` and `story` columns" in _r_plan.stderr,
       (_r_plan.returncode, _r_plan.stderr[-300:]))
 print("\nThe run record counts the sentiment scorer's own calls, not only the domain judge's")
@@ -9161,7 +9161,7 @@ _rc_env = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
 
 def _rc_record(*extra):
     _out = os.path.join(_rc_dir, "o.csv")
-    subprocess.run([sys.executable, "-m", "ewl.label.classify", _rc_in, "--judge", "stub", "--votes", "1",
+    subprocess.run([sys.executable, "-m", "sentiment_lens.label.classify", _rc_in, "--judge", "stub", "--votes", "1",
                     "--no-cache", "--output", _out, *extra], capture_output=True, text=True, env=_rc_env)
     with open(_out + ".run.json", encoding="utf-8") as _h:
         return json.load(_h)["result"]
@@ -9181,7 +9181,7 @@ check("VADER makes no model calls, so only the domain judge's are counted",
       (_rc_vader.get("calls"), _rc_vader.get("calls_by_backend")))
 
 print("\na join that matches no gold comment is refused, not scored as recall 0.00")
-# The Gemma batches label the corpus with the gold comments taken out (ewl-batches
+# The Gemma batches label the corpus with the gold comments taken out (slens-batches
 # prepare --exclude), so joining the gold set to that output matches nothing. join used
 # to write the domain_* header anyway, blank on every row; score, export --scored and
 # report --gold took the header as proof of labels and published recall 0.00, exit 0.
@@ -9215,7 +9215,7 @@ with tempfile.TemporaryDirectory() as _zj:
                               env=env, cwd=_zj)
 
     _zj_out = os.path.join(_zj, "scored.csv")
-    _r = _zj_run("ewl.analyse.validate", "join", _zj_gold, "--labelled", _zj_corpus,
+    _r = _zj_run("sentiment_lens.analyse.validate", "join", _zj_gold, "--labelled", _zj_corpus,
                  "--output", _zj_out)
     check("join refuses when no coded comment is in the labelled file, and writes nothing",
           _r.returncode != 0 and "Refusing to join" in _r.stderr and not os.path.exists(_zj_out),
@@ -9239,15 +9239,15 @@ with tempfile.TemporaryDirectory() as _zj:
     _blank_rows = list(csv.DictReader(open(_zj_blank, encoding="utf-8-sig")))
     check("a domain_* header with every value blank is not taken as machine labels",
           _val.machine_prefix(_blank_rows) is None and not _val.has_machine_labels(_blank_rows))
-    _r = _zj_run("ewl.analyse.validate", "score", _zj_blank)
+    _r = _zj_run("sentiment_lens.analyse.validate", "score", _zj_blank)
     check("score refuses a file whose machine columns are all blank",
           _r.returncode != 0 and "recall" not in _r.stdout, (_r.returncode, _r.stdout[-300:]))
-    _r = _zj_run("ewl.analyse.export_dashboard", _zj_corpus, "--output",
+    _r = _zj_run("sentiment_lens.analyse.export_dashboard", _zj_corpus, "--output",
                  os.path.join(_zj, "r.json"), "--scored", _zj_blank, "--n-boot", "20")
     check("export --scored refuses a file whose machine columns are all blank",
           _r.returncode != 0 and "no machine labels" in _r.stderr and
           not os.path.exists(os.path.join(_zj, "r.json")), (_r.returncode, _r.stderr[-300:]))
-    _r = _zj_run("ewl.analyse.report", "corrected-bootstrap", _zj_corpus, "--column",
+    _r = _zj_run("sentiment_lens.analyse.report", "corrected-bootstrap", _zj_corpus, "--column",
                  "domain_democracy", "--gold", _zj_blank, "--n-boot", "20")
     check("report --gold refuses a gold file whose machine column is all blank",
           _r.returncode != 0 and "no machine labels" in _r.stderr, (_r.returncode, _r.stderr[-300:]))
@@ -9263,7 +9263,7 @@ with tempfile.TemporaryDirectory() as _zj:
                              domain_environment="0", domain_social="0",
                              domain_unclassified="0" if _hit == "1" else "1",
                              domain_parse_failure="0", sentiment_value="0"))
-    _r = _zj_run("ewl.analyse.validate", "score", _zj_ok)
+    _r = _zj_run("sentiment_lens.analyse.validate", "score", _zj_ok)
     check("score still runs on a gold file that carries its machine labels",
           _r.returncode == 0 and "1.00" in _r.stdout, (_r.returncode, _r.stderr[-300:]))
 print("\npersonal-data guard: no tracked file may look like comment data")
@@ -9312,9 +9312,9 @@ check("the legacy skip list only names files under Full Corpus Data/",
 print("\nhardening run: classify executor window, --max-cost, retries, votes, output, strip, story")
 import contextlib as _hc_ctx
 import time as _hc_time
-from ewl.label import classify as _hc
-from ewl.label import combined as _hc_combined
-from ewl.label import sentiment as _hc_sent
+from sentiment_lens.label import classify as _hc
+from sentiment_lens.label import combined as _hc_combined
+from sentiment_lens.label import sentiment as _hc_sent
 
 
 def _hc_write(path, rows, with_story=True):
@@ -9327,7 +9327,7 @@ def _hc_write(path, rows, with_story=True):
 
 
 def _hc_classify(argv):
-    """Run ewl-classify in-process: (the exception it ended with or None, its stderr)."""
+    """Run slens-classify in-process: (the exception it ended with or None, its stderr)."""
     old = sys.argv
     sys.argv = ["classify.py"] + list(argv)
     err = io.StringIO()
@@ -9455,7 +9455,7 @@ with tempfile.TemporaryDirectory() as _hc_tmp:
           and all(r["domain"] and r["comment_id"] for r in _HardFailing.snapshot),
           None if _HardFailing.snapshot is None else len(_HardFailing.snapshot))
 
-print("\nhardening run: --max-cost on ewl-classify")
+print("\nhardening run: --max-cost on slens-classify")
 _hc_calls = []
 
 
@@ -9526,7 +9526,7 @@ with tempfile.TemporaryDirectory() as _hc_tmp:
                                "stub", "--no-cache", "--output", _hc_out, "--limit", "3"])
     check("no --max-cost: no cap, a normal exit", _exc is None, repr(_exc))
 
-print("\nhardening run: --max-cost on ewl-anthropic-batch submit")
+print("\nhardening run: --max-cost on slens-anthropic-batch submit")
 _hc_prev_anthropic = sys.modules.get("anthropic")
 _hc_world = _World()
 _install_fake_anthropic(_hc_world)
@@ -9582,30 +9582,30 @@ for _unknown in ("claude-sonnet-5-7", "claude-opus-5-6", "claude-sonnet-5-latest
         judges.price_for(_unknown)
         _hc_priced_as = "priced"
     except judges.PriceUnavailable as _e:
-        _hc_priced_as = "refused" if "EWL_ANTHROPIC_PRICES" in str(_e) else "wrong message"
+        _hc_priced_as = "refused" if "SLENS_ANTHROPIC_PRICES" in str(_e) else "wrong message"
     check(f"price_for({_unknown!r}) is refused, not priced as a similar model", _hc_priced_as == "refused",
           _hc_priced_as)
-_hc_env = os.environ.get("EWL_ANTHROPIC_PRICES")
-os.environ["EWL_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=2.5,12;claude-haiku-4-5=9,9"
+_hc_env = os.environ.get("SLENS_ANTHROPIC_PRICES")
+os.environ["SLENS_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=2.5,12;claude-haiku-4-5=9,9"
 try:
-    check("a price supplied in EWL_ANTHROPIC_PRICES is used for a model not in the table "
+    check("a price supplied in SLENS_ANTHROPIC_PRICES is used for a model not in the table "
           "(and for its dated snapshots)",
           judges.price_for("claude-sonnet-5-7") == (2.5, 12.0)
           and judges.price_for("claude-sonnet-5-7-20270101") == (2.5, 12.0))
     check("...but never replaces a table price",
           judges.price_for("claude-haiku-4-5") == (1.00, 5.00))
-    os.environ["EWL_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=oops"
+    os.environ["SLENS_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=oops"
     try:
         judges.price_for("claude-sonnet-5-7")
         _hc_bad = False
     except judges.PriceUnavailable:
         _hc_bad = True
-    check("a malformed EWL_ANTHROPIC_PRICES is refused", _hc_bad)
+    check("a malformed SLENS_ANTHROPIC_PRICES is refused", _hc_bad)
 finally:
     if _hc_env is None:
-        os.environ.pop("EWL_ANTHROPIC_PRICES", None)
+        os.environ.pop("SLENS_ANTHROPIC_PRICES", None)
     else:
-        os.environ["EWL_ANTHROPIC_PRICES"] = _hc_env
+        os.environ["SLENS_ANTHROPIC_PRICES"] = _hc_env
 _hc_prev_anthropic = sys.modules.get("anthropic")
 _install_fake_anthropic(_World())
 try:
@@ -9618,13 +9618,13 @@ try:
           _hc_built is False)
     check("a priced model builds",
           judges.create("anthropic:claude-haiku-4-5", votes=1).price_per_mtok == (1.00, 5.00))
-    os.environ["EWL_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=2.5,12"
+    os.environ["SLENS_ANTHROPIC_PRICES"] = "claude-sonnet-5-7=2.5,12"
     check("an unpriced model gets its supplied price when built",
           judges.create("anthropic:claude-sonnet-5-7", votes=1).price_per_mtok == (2.5, 12.0))
 finally:
-    os.environ.pop("EWL_ANTHROPIC_PRICES", None)
+    os.environ.pop("SLENS_ANTHROPIC_PRICES", None)
     if _hc_env is not None:
-        os.environ["EWL_ANTHROPIC_PRICES"] = _hc_env
+        os.environ["SLENS_ANTHROPIC_PRICES"] = _hc_env
     if _hc_prev_anthropic is not None:
         sys.modules["anthropic"] = _hc_prev_anthropic
     else:
@@ -9859,9 +9859,9 @@ with tempfile.TemporaryDirectory() as _hc_tmp:
                                "--output", os.path.join(_hc_tmp, "ws.csv")])
     check("an input that has one does not", "no `story` column" not in _err, _err[-300:])
 print("\nhardening: a partial gold join is refused, unlabelled and blank-hand gold rows are never scored")
-from ewl.analyse import export_dashboard as _hb_ed
-from ewl.analyse import report as _hb_rep
-from ewl.analyse import validate as _hb_val
+from sentiment_lens.analyse import export_dashboard as _hb_ed
+from sentiment_lens.analyse import report as _hb_rep
+from sentiment_lens.analyse import validate as _hb_val
 
 _hb_env = dict(os.environ, PYTHONPATH=os.path.join(os.getcwd(), "src"))
 _HB_CATS = ["democracy", "economics", "environment", "social"]
@@ -9918,13 +9918,13 @@ with tempfile.TemporaryDirectory() as _hb:
     with open(_hb_lab + ".run.json", "w", encoding="utf-8") as _h:
         json.dump({"fixed_examples": {"source": "built-in (synthetic)"}}, _h)
     _hb_out = os.path.join(_hb, "joined.csv")
-    _r = _hb_cli("ewl.analyse.validate", "join", _hb_coded, "--labelled", _hb_lab,
+    _r = _hb_cli("sentiment_lens.analyse.validate", "join", _hb_coded, "--labelled", _hb_lab,
                  "--output", _hb_out)
     check("join refuses when ANY coded gold row is unmatched, naming how many, writing nothing",
           _r.returncode != 0 and "Refusing to join: 2 of 12 coded comments" in _r.stderr
           and "--allow-partial" in _r.stderr and not os.path.exists(_hb_out),
           (_r.returncode, _r.stderr[-300:]))
-    _r = _hb_cli("ewl.analyse.validate", "join", _hb_coded, "--labelled", _hb_lab,
+    _r = _hb_cli("sentiment_lens.analyse.validate", "join", _hb_coded, "--labelled", _hb_lab,
                  "--output", _hb_out, "--allow-partial")
     check("--allow-partial lets the same join through", _r.returncode == 0
           and os.path.exists(_hb_out), (_r.returncode, _r.stderr[-300:]))
@@ -9996,7 +9996,7 @@ with tempfile.TemporaryDirectory() as _hb:
     _hb_json = {}
     for _name, _gold in (("mixed", _hb_gold_mixed), ("ok", _hb_gold_ok)):
         _outj = os.path.join(_hb, f"r_{_name}.json")
-        _r = _hb_cli("ewl.analyse.export_dashboard", _hb_corpus, "--output", _outj,
+        _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_corpus, "--output", _outj,
                      "--scored", _gold, "--status", "validated", "--n-boot", "20")
         check(f"export ({_name} gold) runs", _r.returncode == 0, _r.stderr[-400:])
         _hb_json[_name] = json.load(open(_outj, encoding="utf-8"))
@@ -10013,7 +10013,7 @@ with tempfile.TemporaryDirectory() as _hb:
     _hb_gold_210 = os.path.join(_hb, "gold_210.csv")
     _hb_write(_hb_gold_210, _hb_clean + [_hb_row(i, prefix="d") for i in range(150, 210)])
     _outj = os.path.join(_hb, "r_210.json")
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_corpus, "--output", _outj,
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_corpus, "--output", _outj,
                  "--scored", _hb_gold_210, "--status", "validated", "--n-boot", "20")
     check("210 genuinely coded rows still publish validated",
           json.load(open(_outj, encoding="utf-8"))["provenance"]["status"] == "validated",
@@ -10022,7 +10022,7 @@ with tempfile.TemporaryDirectory() as _hb:
     _hb_gold_part = os.path.join(_hb, "gold_part.csv")
     _hb_write(_hb_gold_part, _hb_clean + _hb_unlab)
     _outj = os.path.join(_hb, "r_part.json")
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_corpus, "--output", _outj,
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_corpus, "--output", _outj,
                  "--scored", _hb_gold_part, "--status", "validated", "--n-boot", "20")
     _jp = json.load(open(_outj, encoding="utf-8"))
     check("export leaves unlabelled gold rows out (gold 150, provisional), says so, same figures",
@@ -10033,7 +10033,7 @@ with tempfile.TemporaryDirectory() as _hb:
     # the CLI score on a partially unlabelled file: same figures as the clean one
     _hb_part_csv = os.path.join(_hb, "part_score.csv")
     _hb_write(_hb_part_csv, _hb_clean + _hb_unlab)
-    _r = _hb_cli("ewl.analyse.validate", "score", _hb_part_csv, "--no-example-exclusion")
+    _r = _hb_cli("sentiment_lens.analyse.validate", "score", _hb_part_csv, "--no-example-exclusion")
     check("validate score on the file prints the clean figures and the count",
           _r.returncode == 0 and _r.stdout == _hb_score_clean
           and "Left out 60 of 210" in _r.stderr, (_r.returncode, _r.stderr[-200:]))
@@ -10076,51 +10076,51 @@ with tempfile.TemporaryDirectory() as _hb:
     # the CLIs: ids from the record come out of the scored rows, and the count is printed
     with open(_hb_gold + ".run.json", "w", encoding="utf-8") as _h:
         json.dump({"fixed_examples": {"source": "file", "ids": ["g0", "g3"]}}, _h)
-    _r = _hb_cli("ewl.analyse.validate", "score", _hb_gold)
+    _r = _hb_cli("sentiment_lens.analyse.validate", "score", _hb_gold)
     check("validate score excludes the record's examples and reports 2 of 150",
           _r.returncode == 0 and "Excluded 2 of 150 gold rows" in _r.stderr
           and "Scoring 148 hand-coded comments" in _r.stdout, (_r.returncode, _r.stderr[-300:]))
     _hb_corp = os.path.join(_hb, "corpus.csv")
     _hb_write(_hb_corp, [_hb_row(i, hand=False, prefix="c") for i in range(60)])
-    _r = _hb_cli("ewl.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30")
     check("report corrected-bootstrap excludes them too (148 gold rows) and prints the count",
           _r.returncode == 0 and "Excluded 2 of 150 gold rows" in _r.stderr
           and "WARNING: no worked-example ids" not in _r.stderr, (_r.returncode, _r.stderr[-400:]))
-    _r = _hb_cli("ewl.analyse.report", "ppi-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "ppi-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30")
     check("ppi-bootstrap and corrected-by-story honour the record as well",
           _r.returncode == 0 and "Excluded 2 of 150 gold rows" in _r.stderr, _r.stderr[-300:])
-    _r = _hb_cli("ewl.analyse.report", "corrected-by-story", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-by-story", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30")
     check("corrected-by-story honours the record", "Excluded 2 of 150 gold rows" in _r.stderr,
           _r.stderr[-300:])
     os.remove(_hb_gold + ".run.json")
-    _r = _hb_cli("ewl.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30")
     check("with no record and no --exclude-ids report prints the WARNING",
           "WARNING: no worked-example ids are known" in _r.stderr, _r.stderr[-300:])
-    _r = _hb_cli("ewl.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30",
                  "--no-example-exclusion")
     check("--no-example-exclusion silences it", "WARNING: no worked-example" not in _r.stderr
           and _r.returncode == 0, _r.stderr[-300:])
-    _r = _hb_cli("ewl.analyse.validate", "score", _hb_gold)
+    _r = _hb_cli("sentiment_lens.analyse.validate", "score", _hb_gold)
     check("validate score warns too without a record", "WARNING: no worked-example ids" in _r.stderr,
           _r.stderr[-300:])
-    _r = _hb_cli("ewl.analyse.validate", "score", _hb_gold, "--no-example-exclusion")
+    _r = _hb_cli("sentiment_lens.analyse.validate", "score", _hb_gold, "--no-example-exclusion")
     check("and --no-example-exclusion silences validate score",
           "WARNING" not in _r.stderr and _r.returncode == 0, _r.stderr[-300:])
     # --base both resolves the examples once
     with open(_hb_gold + ".run.json", "w", encoding="utf-8") as _h:
         json.dump({"fixed_examples": {"source": "file", "ids": ["g0", "g3"]}}, _h)
-    _r = _hb_cli("ewl.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30", "--base", "both")
     check("--base both announces the worked examples once, not per base",
           _r.stderr.count("worked-example comment(s) named in") == 1, _r.stderr[-600:])
 
-print("\nhardening: ewl-keywords carries the run record, so classify -> keywords -> export keeps it")
-from ewl import corpus as _hb_corpus_mod
+print("\nhardening: slens-keywords carries the run record, so classify -> keywords -> export keeps it")
+from sentiment_lens import corpus as _hb_corpus_mod
 
 with tempfile.TemporaryDirectory() as _hb:
     _hb_lab = os.path.join(_hb, "lab.csv")
@@ -10133,13 +10133,13 @@ with tempfile.TemporaryDirectory() as _hb:
                               indent=2, sort_keys=True)
     with open(_hb_lab + ".run.json", "w", encoding="utf-8", newline="") as _h:
         _h.write(_hb_rec_text)
-    _r = _hb_cli("ewl.label.keywords", _hb_lab, "--output", _hb_both)
-    check("ewl-keywords runs on the labelled file", _r.returncode == 0, _r.stderr[-300:])
+    _r = _hb_cli("sentiment_lens.label.keywords", _hb_lab, "--output", _hb_both)
+    check("slens-keywords runs on the labelled file", _r.returncode == 0, _r.stderr[-300:])
     check("and copies the input's run record beside its output, byte for byte",
           os.path.exists(_hb_both + ".run.json")
           and open(_hb_both + ".run.json", "rb").read() == open(_hb_lab + ".run.json", "rb").read())
     # export reads the carried record: a partial progress file cannot pass for the corpus
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o.json"),
                  "--allow-unvalidated", "--corpus", _hb_lab)
     check("export --corpus on the keywords output refuses the partial progress file",
           _r.returncode != 0 and "PARTIAL progress file" in _r.stderr, (_r.returncode, _r.stderr[-300:]))
@@ -10148,8 +10148,8 @@ with tempfile.TemporaryDirectory() as _hb:
     del _rec["partial"]
     with open(_hb_lab + ".run.json", "w", encoding="utf-8") as _h:
         json.dump(_rec, _h)
-    _r = _hb_cli("ewl.label.keywords", _hb_lab, "--output", _hb_both)
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o.json"),
+    _r = _hb_cli("sentiment_lens.label.keywords", _hb_lab, "--output", _hb_both)
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o.json"),
                  "--allow-unvalidated", "--corpus", _hb_lab, "--n-boot", "20")
     check("export --corpus then finds the record and checks the corpus hash",
           _r.returncode == 0 and "matches the corpus the labels were made from" in _r.stderr,
@@ -10160,20 +10160,20 @@ with tempfile.TemporaryDirectory() as _hb:
     # --run-record points at a record that is not beside the file
     _hb_moved = os.path.join(_hb, "elsewhere.json")
     os.replace(_hb_both + ".run.json", _hb_moved)
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o2.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o2.json"),
                  "--allow-unvalidated", "--n-boot", "20")
     check("without the record beside the file, export notes it is missing",
           "no run record beside the labelled file" in _r.stderr
           and json.load(open(os.path.join(_hb, "o2.json"), encoding="utf-8"))["provenance"][
               "run_record_found"] is False, _r.stderr[-300:])
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o3.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o3.json"),
                  "--allow-unvalidated", "--n-boot", "20", "--run-record", _hb_moved,
                  "--corpus", _hb_lab)
     check("--run-record finds it and the --corpus check then passes",
           _r.returncode == 0 and "matches the corpus the labels were made from" in _r.stderr
           and json.load(open(os.path.join(_hb, "o3.json"), encoding="utf-8"))["provenance"][
               "run_record_found"] is True, (_r.returncode, _r.stderr[-300:]))
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o4.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_both, "--output", os.path.join(_hb, "o4.json"),
                  "--allow-unvalidated", "--run-record", os.path.join(_hb, "nope.json"))
     check("--run-record with a missing file is refused, not ignored",
           _r.returncode != 0 and "--run-record file not found" in _r.stderr, _r.stderr[-200:])
@@ -10181,7 +10181,7 @@ with tempfile.TemporaryDirectory() as _hb:
     os.remove(_hb_lab + ".run.json")
     with open(_hb_both + ".run.json", "w", encoding="utf-8") as _h:
         _h.write("{}")
-    _r = _hb_cli("ewl.label.keywords", _hb_lab, "--output", _hb_both)
+    _r = _hb_cli("sentiment_lens.label.keywords", _hb_lab, "--output", _hb_both)
     check("an input with no run record removes a stale one beside the output",
           not os.path.exists(_hb_both + ".run.json") and "Removed a stale" in _r.stderr, _r.stderr[-200:])
 
@@ -10236,7 +10236,7 @@ with tempfile.TemporaryDirectory() as _hb:
 
     def _hb_export(name, *extra):
         out = os.path.join(_hb, f"{name}.json")
-        r = _hb_cli("ewl.analyse.export_dashboard", _hb_lab, "--output", out, "--scored", _hb_gold,
+        r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_lab, "--output", out, "--scored", _hb_gold,
                     "--n-boot", "20", *extra)
         return r, (json.load(open(out, encoding="utf-8")) if os.path.exists(out) else None)
 
@@ -10365,9 +10365,9 @@ with tempfile.TemporaryDirectory() as _hb:
     _hb_write(_hb_gold, _hb_clean)
     _hb_corp = os.path.join(_hb, "corpus.csv")
     _hb_write(_hb_corp, [_hb_row(i, hand=False, prefix="c") for i in range(60)])
-    _r = _hb_cli("ewl.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
+    _r = _hb_cli("sentiment_lens.analyse.report", "corrected-bootstrap", _hb_corp, "--column",
                  "domain_democracy", "--gold", _hb_gold, "--n-boot", "30", "--no-example-exclusion")
-    check("ewl-report prints the line beside the effective-positives line, and still gates as before",
+    check("slens-report prints the line beside the effective-positives line, and still gates as before",
           "Weighted evidence behind TPR/FPR for 'democracy'" in _r.stderr
           and "effective (Horvitz-Thompson-weighted)" in _r.stderr, _r.stderr[-500:])
 
@@ -10435,17 +10435,17 @@ with tempfile.TemporaryDirectory() as _hb:
           and _three["domain"]["democracy"]["alpha"] is not None, sorted(_three))
     _hb_corp = os.path.join(_hb, "corpus.csv")
     _hb_write(_hb_corp, [_hb_row(i, hand=False, prefix="c") for i in range(60)])
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_corp, "--output", os.path.join(_hb, "o.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_corp, "--output", os.path.join(_hb, "o.json"),
                  "--allow-unvalidated", "--n-boot", "20", "--interrater", _j3)
     check("export warns that the page draws two-coder columns for a multi-coder file",
           _r.returncode == 0 and "multi-coder (Krippendorff alpha) file" in _r.stderr
           and "do" in _r.stderr, (_r.returncode, _r.stderr[-400:]))
-    _r = _hb_cli("ewl.analyse.export_dashboard", _hb_corp, "--output", os.path.join(_hb, "o.json"),
+    _r = _hb_cli("sentiment_lens.analyse.export_dashboard", _hb_corp, "--output", os.path.join(_hb, "o.json"),
                  "--allow-unvalidated", "--n-boot", "20", "--interrater", _j2)
     check("and says nothing of the sort for a two-coder file",
           _r.returncode == 0 and "multi-coder" not in _r.stderr, (_r.returncode, _r.stderr[-300:]))
 
-print(chr(10) + "ewl-report --rescale-unclassified: a weights sensitivity run, other strata untouched")
+print(chr(10) + "slens-report --rescale-unclassified: a weights sensitivity run, other strata untouched")
 import tempfile as _tf_rs
 with _tf_rs.TemporaryDirectory() as _d_rs:
     _corp = os.path.join(_d_rs, "frozen.csv")
@@ -10482,21 +10482,21 @@ _dm, _ = _hb_ed.instrument_differences(
     _hb_record(model_build={"digest": "aaa"}), _hb_record(model_build={"digest": "bbb"}))
 check("records that differ only in the model digest are a difference", any("digest" in x for x in _dm), _dm)
 
-print(chr(10) + "Anthropic client: a hung call is abandoned after EWL_ANTHROPIC_TIMEOUT, SDK retries off")
+print(chr(10) + "Anthropic client: a hung call is abandoned after SLENS_ANTHROPIC_TIMEOUT, SDK retries off")
 _seen_kw = {}
 _fake_mod = types.ModuleType("anthropic") if "types" in globals() else _types_c.ModuleType("anthropic")
 _fake_mod.Anthropic = lambda *a, **k: (_seen_kw.update(k), _types_c.SimpleNamespace(messages=None))[1]
 _saved_anth = sys.modules.get("anthropic")
 sys.modules["anthropic"] = _fake_mod
-_old_to = os.environ.pop("EWL_ANTHROPIC_TIMEOUT", None)
+_old_to = os.environ.pop("SLENS_ANTHROPIC_TIMEOUT", None)
 try:
     judges.AnthropicJudge("claude-sonnet-5-5")
     check("the default request timeout is 60 seconds and the SDK's silent retries are off",
           _seen_kw.get("timeout") == 60.0 and _seen_kw.get("max_retries") == 0, _seen_kw)
-    os.environ["EWL_ANTHROPIC_TIMEOUT"] = "15"
+    os.environ["SLENS_ANTHROPIC_TIMEOUT"] = "15"
     judges.AnthropicJudge("claude-sonnet-5-5")
-    check("EWL_ANTHROPIC_TIMEOUT sets it", _seen_kw.get("timeout") == 15.0, _seen_kw)
-    os.environ["EWL_ANTHROPIC_TIMEOUT"] = "soon"
+    check("SLENS_ANTHROPIC_TIMEOUT sets it", _seen_kw.get("timeout") == 15.0, _seen_kw)
+    os.environ["SLENS_ANTHROPIC_TIMEOUT"] = "soon"
     try:
         judges.AnthropicJudge("claude-sonnet-5-5")
         _bad_to = False
@@ -10504,9 +10504,9 @@ try:
         _bad_to = True
     check("a timeout that is not a positive number is refused", _bad_to)
 finally:
-    os.environ.pop("EWL_ANTHROPIC_TIMEOUT", None)
+    os.environ.pop("SLENS_ANTHROPIC_TIMEOUT", None)
     if _old_to is not None:
-        os.environ["EWL_ANTHROPIC_TIMEOUT"] = _old_to
+        os.environ["SLENS_ANTHROPIC_TIMEOUT"] = _old_to
     if _saved_anth is None:
         sys.modules.pop("anthropic", None)
     else:

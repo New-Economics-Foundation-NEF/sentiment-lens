@@ -14,7 +14,7 @@ Under UK GDPR, the following are personal data:
 
 Every file that holds any of these is personal data. That includes the collected and merged
 corpus, every labelled output, the gold sample and the coders' files, the review files from
-`ewl-adjudicate`, the batch inputs and outputs, `subset.csv` from `ewl-anthropic-batch`, the
+`slens-adjudicate`, the batch inputs and outputs, `subset.csv` from `slens-anthropic-batch`, the
 response caches, and a fixed examples file. Run records hold comment ids when a real examples
 file is used.
 
@@ -47,15 +47,15 @@ prompt you control by hand. Report counts and figures instead.
 ## The author salt
 
 Collectors never write an author's name. They write `author_hash`, a SHA-256 hash of the name
-mixed with a secret salt from `EWL_AUTHOR_SALT`. There is no default: a salt published in the
+mixed with a secret salt from `SLENS_AUTHOR_SALT`. There is no default: a salt published in the
 repository would let anyone hash a guessed name and match it. The collectors stop if the
 variable is not set, or is shorter than 16 characters.
 
-- Keep the salt outside the repository, for example in `~/.config/ewl.env` readable only by
+- Keep the salt outside the repository, for example in `~/.config/sentiment_lens.env` readable only by
   you.
 - Agree one value for a project and never change it. A different salt makes `author_hash`
   values incomparable, so never merge corpora collected under different salts.
-- `ewl-merge` records a short fingerprint of the salt in the manifest, never the salt itself, so
+- `slens-merge` records a short fingerprint of the salt in the manifest, never the salt itself, so
   a merge across salts can be detected.
 
 ## Cloud judges send comment text to a third party
@@ -66,14 +66,14 @@ data-protection sign-off before you use one.
 
 | Backend | Where text goes | What the code does |
 |---|---|---|
-| `openai:` | OpenAI | Refuses to start unless `EWL_EXTERNAL_PROCESSORS` lists `openai`. Nothing is sent. |
-| `google:` | Google | Refuses to start unless `EWL_EXTERNAL_PROCESSORS` lists `google`. Nothing is sent. |
-| `anthropic:` and `ewl-anthropic-batch` | Anthropic | **Not gated.** The code sends text as soon as `ANTHROPIC_API_KEY` is set. Record the sign-off before you run it. Anthropic keeps batch results for 29 days. |
-| `ollama:`, `gemma`, `ewl-gemma` | nowhere: runs on your machine | Not gated. Make sure `OLLAMA_HOST` (or `--host`) points at a machine you control. |
+| `openai:` | OpenAI | Refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `openai`. Nothing is sent. |
+| `google:` | Google | Refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `google`. Nothing is sent. |
+| `anthropic:` and `slens-anthropic-batch` | Anthropic | **Not gated.** The code sends text as soon as `ANTHROPIC_API_KEY` is set. Record the sign-off before you run it. Anthropic keeps batch results for 29 days. |
+| `ollama:`, `gemma`, `slens-gemma` | nowhere: runs on your machine | Not gated. Make sure `OLLAMA_HOST` (or `--host`) points at a machine you control. |
 | `keyword`, `stub` | nowhere | — |
 | `manual` | wherever you paste the prompt | You are the processor: do not paste real comments into a service without sign-off. |
 
-Set `EWL_EXTERNAL_PROCESSORS` (comma-separated, for example `openai,google`) only once the
+Set `SLENS_EXTERNAL_PROCESSORS` (comma-separated, for example `openai,google`) only once the
 sign-off is recorded.
 
 `scripts/scratch_count_prompt_tokens.py --fixed-examples FILE` sends the prompts, including the
@@ -81,7 +81,7 @@ example comments, to Anthropic's token-counting endpoint.
 
 ## Redaction
 
-`ewl-redact` finds, and optionally replaces, three kinds of identifier in comment text:
+`slens-redact` finds, and optionally replaces, three kinds of identifier in comment text:
 
 - `@handles` (`--handles leading` for a handle that opens the comment, `--handles all` for every
   one), replaced with `@user` (change it with `--handle-token`);
@@ -89,8 +89,8 @@ example comments, to Anthropic's token-counting endpoint.
 - phone numbers (`--phones`), replaced with `[phone]`.
 
 ```bash
-ewl-redact official-data/master.csv                 # counts only, nothing written
-ewl-redact official-data/master.csv --handles all --emails --phones \
+slens-redact official-data/master.csv                 # counts only, nothing written
+slens-redact official-data/master.csv --handles all --emails --phones \
     --output official-data/master_redacted.csv
 ```
 
@@ -101,7 +101,7 @@ are not redacted. Read a sample of the output.
 
 ## Publishing results
 
-`ewl-export-dashboard` writes no comment text by default. The worked examples and the table of
+`slens-export-dashboard` writes no comment text by default. The worked examples and the table of
 machine-versus-human disagreements are included only with `--include-verbatim`, and the export
 records that it was used. The codebook publishes the prompts and, for a real examples file, only
 a count and a checksum. Publish figures, not comments.

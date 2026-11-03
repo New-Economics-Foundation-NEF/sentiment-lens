@@ -1,8 +1,8 @@
-site_name: "ewl: social sentiment labelling"
+site_name: "sentiment-lens"
 site_description: Label social-media comments about extreme wealth by harm domain and stance, validate the labels and correct prevalence for model error.
-site_url: https://new-economics-foundation-nef.github.io/ewl-social-sentiment/
-repo_url: https://github.com/New-Economics-Foundation-NEF/ewl-social-sentiment
-repo_name: ewl-social-sentiment
+site_url: https://new-economics-foundation-nef.github.io/sentiment-lens/
+repo_url: https://github.com/New-Economics-Foundation-NEF/sentiment-lens
+repo_name: sentiment-lens
 edit_uri: edit/main/docs/
 docs_dir: docs
 

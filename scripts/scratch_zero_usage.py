@@ -27,8 +27,8 @@ import os
 import statistics
 import sys
 
-from ewl.analyse.validate import read_any, read_ids
-from ewl.taxonomy import CATEGORY_NAMES
+from sentiment_lens.analyse.validate import read_any, read_ids
+from sentiment_lens.taxonomy import CATEGORY_NAMES
 
 ZERO = {"0", "irrelevant"}
 

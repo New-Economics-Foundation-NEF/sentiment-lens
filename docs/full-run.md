@@ -11,21 +11,21 @@ Read [Data protection](data-protection.md) first.
 Collect, clean and merge as described in [The pipeline](pipeline.md):
 
 ```bash
-ewl-merge official-data/<story>_clean.csv ... \
+slens-merge official-data/<story>_clean.csv ... \
     --cap-per-author 20 --cap-scope story --dedupe-bodies \
     --output official-data/master.csv
 ```
 
-`ewl-merge` writes `master.csv.manifest.json`. Export `EWL_AUTHOR_SALT` first, so the manifest
+`slens-merge` writes `master.csv.manifest.json`. Export `SLENS_AUTHOR_SALT` first, so the manifest
 records its fingerprint. Do not change the corpus once the gold set has been drawn from it.
 
 ## 2. Build the gold set
 
-1. `ewl-keywords`, then `ewl-primary-category`, on the frozen corpus.
-2. `ewl-validate sample --stratify-by story,primary_category --video-cap-fraction 0.15`.
+1. `slens-keywords`, then `slens-primary-category`, on the frozen corpus.
+2. `slens-validate sample --stratify-by story,primary_category --video-cap-fraction 0.15`.
 3. At least two coders code the sample independently.
-4. `ewl-validate interrater` on the coders' original files.
-5. `ewl-adjudicate` for the comments coded in common, then `ewl-validate combine` (or
+4. `slens-validate interrater` on the coders' original files.
+5. `slens-adjudicate` for the comments coded in common, then `slens-validate combine` (or
    `reweight`) against the frozen corpus, so every inclusion probability is right.
 
 See [Validation](validation.md).
@@ -35,7 +35,7 @@ See [Validation](validation.md).
 Leave the gold comments and the worked examples out of the corpus you label:
 
 ```bash
-ewl-batches prepare official-data/master.csv \
+slens-batches prepare official-data/master.csv \
     --exclude official-data/gold.csv --exclude official-data/fixed_examples.csv \
     --output official-data/corpus_for_batching.csv
 ```
@@ -52,16 +52,16 @@ Choose, and write down, before anything is labelled:
 - every instrument switch (leave them at their defaults unless you have decided otherwise);
 - the number of votes;
 - the model's thinking or effort setting, set explicitly in the environment (for example
-  `EWL_OPENAI_REASONING_EFFORT=low`) so it is part of the cache key.
+  `SLENS_OPENAI_REASONING_EFFORT=low`) so it is part of the cache key.
 
 The cache is keyed on all of it. A change later means labelling everything again.
 
-For an OpenAI or Gemini judge, set `EWL_EXTERNAL_PROCESSORS` once your data-protection
+For an OpenAI or Gemini judge, set `SLENS_EXTERNAL_PROCESSORS` once your data-protection
 sign-off is recorded; without it the judge refuses to start. An Anthropic judge is not gated by
 that variable, so record its sign-off separately.
 
 **Redaction.** Decide whether to redact. If you do, redact a **copy** of
-`corpus_for_batching.csv` and of the gold file (`ewl-redact --handles all --emails --phones
+`corpus_for_batching.csv` and of the gold file (`slens-redact --handles all --emails --phones
 --output ...`), label the copies, and pass the redacted corpus to `--corpus` in step 9. Never
 redact the master corpus or the prepared corpus in place. If you do not redact, say in the
 methods that handles and URLs are present in the text sent to the provider.
@@ -71,7 +71,7 @@ methods that handles and URLs are present in the text sent to the provider.
 Run a few hundred comments with a separate cache:
 
 ```bash
-ewl-classify official-data/corpus_for_batching.csv --limit 200 \
+slens-classify official-data/corpus_for_batching.csv --limit 200 \
     --judge <JUDGE> --sentiment <SCORER> --selector fixed \
     --fixed-examples official-data/fixed_examples.csv --votes <N> --concurrency <C> \
     --cache official-data/preflight_cache.jsonl --output official-data/preflight_corpus.csv
@@ -82,12 +82,12 @@ between the two cannot work, because the prepared corpus holds no gold comments.
 
 Read the printed cost, time per comment and parse-failure rate, and the run record. If the
 corpus file is sorted by story, `--limit` takes one story only; that is fine for a mechanical
-check but not for a speed estimate (`ewl-gemma` and `ewl-anthropic-batch` have `--sample`).
+check but not for a speed estimate (`slens-gemma` and `slens-anthropic-batch` have `--sample`).
 
 ## 6. Label the corpus
 
 ```bash
-ewl-classify official-data/corpus_for_batching.csv \
+slens-classify official-data/corpus_for_batching.csv \
     --judge <JUDGE> --sentiment <SCORER> --selector fixed \
     --fixed-examples official-data/fixed_examples.csv --votes <N> --concurrency <C> \
     --max-cost <USD> --cache official-data/<run>_cache.jsonl \
@@ -96,19 +96,19 @@ ewl-classify official-data/corpus_for_batching.csv \
 
 Use a fresh cache file for the run. If it stops for the cost cap, a network drop or a sleeping
 laptop, run the same command again: the cache continues it. Keep the laptop awake (see
-[Long runs and batches](batches.md#keeping-a-laptop-awake)). For a local model use `ewl-gemma`
-with `ewl-batches`; for Claude at half price use `ewl-anthropic-batch`.
+[Long runs and batches](batches.md#keeping-a-laptop-awake)). For a local model use `slens-gemma`
+with `slens-batches`; for Claude at half price use `slens-anthropic-batch`.
 
 ## 7. Label the gold set with the same instrument
 
-Run `ewl-classify` on the gold file with exactly the same judge, scorer, votes, examples and
-switches, into its own output (`official-data/<run>_gold.csv`). `ewl-export-dashboard` compares
+Run `slens-classify` on the gold file with exactly the same judge, scorer, votes, examples and
+switches, into its own output (`official-data/<run>_gold.csv`). `slens-export-dashboard` compares
 the two run records and refuses a mismatch.
 
 ## 8. Score the gold set
 
 ```bash
-ewl-validate score official-data/<run>_gold.csv
+slens-validate score official-data/<run>_gold.csv
 ```
 
 It leaves out the worked examples named in the gold file's run record. If the examples were
@@ -121,11 +121,11 @@ Run Rogan-Gladen (the lead estimator) and PPI (the check) for each category, on 
 denominator chosen for the headline (`--base`):
 
 ```bash
-ewl-report corrected-by-story official-data/<run>_corpus.csv \
+slens-report corrected-by-story official-data/<run>_corpus.csv \
     --column domain_democracy --gold official-data/<run>_gold.csv
-ewl-report corrected-bootstrap official-data/<run>_corpus.csv \
+slens-report corrected-bootstrap official-data/<run>_corpus.csv \
     --column domain_democracy --gold official-data/<run>_gold.csv
-ewl-report ppi-bootstrap official-data/<run>_corpus.csv \
+slens-report ppi-bootstrap official-data/<run>_corpus.csv \
     --column domain_democracy --gold official-data/<run>_gold.csv
 ```
 
@@ -136,7 +136,7 @@ frozen corpus with `primary_category`) and report both. See
 ## 10. Export
 
 ```bash
-ewl-export-dashboard official-data/<run>_corpus.csv \
+slens-export-dashboard official-data/<run>_corpus.csv \
     --corpus official-data/corpus_for_batching.csv \
     --scored official-data/<run>_gold.csv \
     --interrater official-data/interrater.json \

@@ -1,11 +1,11 @@
 # Correcting prevalence
 
 A labelled corpus says what the model said. If the model misses some comments about a harm and
-wrongly tags others, the observed share is biased. `ewl-report` estimates the true share by
+wrongly tags others, the observed share is biased. `slens-report` estimates the true share by
 measuring the model's errors on the gold set and correcting for them, with an interval that
 carries both sources of uncertainty.
 
-`ewl-report` takes a labelled corpus and, for the corrected figures, a labelled gold file
+`slens-report` takes a labelled corpus and, for the corrected figures, a labelled gold file
 (`--gold`). `--column` names the share, for example `domain_democracy` or `sentiment_value`.
 
 ## Subcommands
@@ -20,11 +20,11 @@ carries both sources of uncertainty.
 | `corrected-by-story` | The Rogan-Gladen estimate and interval for each story on its own, or the reason a story is refused. |
 
 ```bash
-ewl-report corrected-bootstrap official-data/master_labelled.csv \
+slens-report corrected-bootstrap official-data/master_labelled.csv \
     --column domain_democracy --gold official-data/gold_labelled.csv
-ewl-report ppi-bootstrap official-data/master_labelled.csv \
+slens-report ppi-bootstrap official-data/master_labelled.csv \
     --column domain_democracy --gold official-data/gold_labelled.csv
-ewl-report corrected-by-story official-data/master_labelled.csv \
+slens-report corrected-by-story official-data/master_labelled.csv \
     --column domain_democracy --gold official-data/gold_labelled.csv
 ```
 
@@ -137,7 +137,7 @@ labels, shares on that base can add up to more than 100%. `corrected --tpr/--fpr
 ## Weights sensitivity: `--rescale-unclassified`
 
 ```bash
-ewl-report corrected-bootstrap official-data/master_labelled.csv \
+slens-report corrected-bootstrap official-data/master_labelled.csv \
     --column domain_democracy --gold official-data/gold_labelled.csv \
     --rescale-unclassified official-data/master_kw_primary.csv
 ```

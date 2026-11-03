@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ewl"
+name = "sentiment-lens"
 version = "0.1.0"
 description = "Extreme Wealth Line: collecting and labelling social media comments about extreme wealth"
 requires-python = ">=3.9"
@@ -25,32 +25,32 @@ google = ["google-genai>=1.0"]
 ollama = ["ollama==0.4.7"]
 retrieval = ["sentence-transformers>=2.2"]
 language = ["langdetect==1.0.9"]
-# Reading and writing .xlsx coder files (ewl-validate, ewl-agreement, the scripts/ helpers)
+# Reading and writing .xlsx coder files (slens-validate, slens-agreement, the scripts/ helpers)
 # and plotting.
 analysis = ["openpyxl>=3.1", "matplotlib>=3.8"]
 docs = ["mkdocs-material>=9.5"]
 
 [project.scripts]
-ewl-collect  = "ewl.collect.youtube:main"
-ewl-collect-full-corpus = "ewl.collect.youtube_full_corpus:main"
-ewl-merge    = "ewl.collect.merge:main"
-ewl-clean-videos = "ewl.collect.clean_videos:main"
-ewl-redact   = "ewl.collect.redact:main"
-ewl-gemma    = "ewl.label.classify_gemma:main"
-ewl-batches  = "ewl.collect.batches:main"
-ewl-anthropic-batch = "ewl.label.anthropic_batch:main"
-ewl-primary-category = "ewl.collect.primary_category:main"
-ewl-adjudicate = "ewl.analyse.adjudicate:main"
-ewl-classify = "ewl.label.classify:main"
-ewl-keywords = "ewl.label.keywords:main"
-ewl-evaluate = "ewl.analyse.evaluate:main"
-ewl-agreement = "ewl.analyse.agreement:main"
-ewl-validate = "ewl.analyse.validate:main"
-ewl-report   = "ewl.analyse.report:main"
-ewl-export-dashboard = "ewl.analyse.export_dashboard:main"
+slens-collect  = "sentiment_lens.collect.youtube:main"
+slens-collect-full-corpus = "sentiment_lens.collect.youtube_full_corpus:main"
+slens-merge    = "sentiment_lens.collect.merge:main"
+slens-clean-videos = "sentiment_lens.collect.clean_videos:main"
+slens-redact   = "sentiment_lens.collect.redact:main"
+slens-gemma    = "sentiment_lens.label.classify_gemma:main"
+slens-batches  = "sentiment_lens.collect.batches:main"
+slens-anthropic-batch = "sentiment_lens.label.anthropic_batch:main"
+slens-primary-category = "sentiment_lens.collect.primary_category:main"
+slens-adjudicate = "sentiment_lens.analyse.adjudicate:main"
+slens-classify = "sentiment_lens.label.classify:main"
+slens-keywords = "sentiment_lens.label.keywords:main"
+slens-evaluate = "sentiment_lens.analyse.evaluate:main"
+slens-agreement = "sentiment_lens.analyse.agreement:main"
+slens-validate = "sentiment_lens.analyse.validate:main"
+slens-report   = "sentiment_lens.analyse.report:main"
+slens-export-dashboard = "sentiment_lens.analyse.export_dashboard:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-ewl = ["keywords.yml"]
+sentiment_lens = ["keywords.yml"]

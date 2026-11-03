@@ -35,7 +35,7 @@ def normalise(text):
 
 def read_reference(paths, body_column="body", id_column="comment_id"):
     """{normalised body: {comment_id: story}} from one or more reference sheets."""
-    from ewl.analyse.validate import read_any
+    from sentiment_lens.analyse.validate import read_any
     index = collections.defaultdict(dict)
     for path in paths:
         rows = read_any(path)

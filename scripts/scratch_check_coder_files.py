@@ -9,7 +9,7 @@ the core comments the coder has, and for those how many have a blank hand_domain
 hand_sentiment; any hand_domain value that is not a category or "none" (a list number such as
 "3", a typo, an off-list word); and the spread of sentiment values with any that are not a
 valid rating. Then across files: how many core comments EVERY coder has (this is the n that
-`ewl-validate interrater` will use), and which core ids are missing from which file.
+`slens-validate interrater` will use), and which core ids are missing from which file.
 
 Exits 0 when nothing needs fixing and 1 otherwise, so it can sit in a checklist.
 Needs `pip install -e ".[analysis]"` for .xlsx files.
@@ -20,8 +20,8 @@ import difflib
 import os
 import sys
 
-from ewl.analyse.validate import read_any, read_ids
-from ewl.taxonomy import CATEGORY_NAMES
+from sentiment_lens.analyse.validate import read_any, read_ids
+from sentiment_lens.taxonomy import CATEGORY_NAMES
 
 SENTIMENT_WORDS = {"negative", "neutral", "positive", "irrelevant", "uncodeable"}
 
@@ -168,7 +168,7 @@ def main():
                       f"{', '.join(sorted(gone)[:5])}")
     failed = any(r["problems"] for r in reports)
     print("\n" + ("Fix the PROBLEM lines above before computing agreement." if failed
-                  else "All files look ready for `ewl-validate interrater`."))
+                  else "All files look ready for `slens-validate interrater`."))
     sys.exit(1 if failed else 0)
 
 

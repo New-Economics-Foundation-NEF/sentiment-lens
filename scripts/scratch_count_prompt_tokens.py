@@ -13,7 +13,7 @@ text of those 25 does reach Anthropic (the API arms send comments there anyway).
 
 Why this matters: a prompt under the model's minimum still works. Nothing fails
 and no warning appears; every call is simply billed at the full input price
-instead of about a tenth of it. `ewl-classify` prints an estimate-based warning,
+instead of about a tenth of it. `slens-classify` prints an estimate-based warning,
 but the estimate (4 characters per token) can be ~15% out, and the sentiment
 prompts sit close enough to Sonnet's 1,024-token minimum for that to matter.
 
@@ -24,9 +24,9 @@ minimum is marked TIGHT for that reason.
 import argparse
 import sys
 
-from ewl import taxonomy
-from ewl.label import combined, judges
-from ewl.label import sentiment as sentiment_mod
+from sentiment_lens import taxonomy
+from sentiment_lens.label import combined, judges
+from sentiment_lens.label import sentiment as sentiment_mod
 
 DEFAULT_MODELS = ["claude-sonnet-5-5", "claude-opus-5-5"]
 TIGHT_MARGIN = 1.03

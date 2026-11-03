@@ -1,6 +1,6 @@
-# ewl: social sentiment labelling
+# sentiment-lens: social sentiment labelling
 
-`ewl` labels social-media comments about extreme wealth. For each comment it records a harm
+`sentiment-lens` labels social-media comments about extreme wealth. For each comment it records a harm
 domain (`democracy`, `economics`, `environment` or `social`, up to two, or `unclassified`) and
 a stance toward extreme wealth (`negative`, `neutral`, `positive`, `irrelevant` or
 `uncodeable`). The labels come from a cloud LLM, a local model or a keyword list. The package
@@ -9,22 +9,22 @@ model's errors (Rogan-Gladen, with PPI as a check), with Horvitz-Thompson weight
 from a bootstrap clustered by video, and exports the results for a dashboard. It was built for
 the Extreme Wealth Line project on YouTube comments.
 
-**Documentation:** <https://new-economics-foundation-nef.github.io/ewl-social-sentiment/>
+**Documentation:** <https://new-economics-foundation-nef.github.io/sentiment-lens/>
 
 ## Install
 
 Python 3.9 or later.
 
 ```bash
-git clone https://github.com/New-Economics-Foundation-NEF/ewl-social-sentiment.git
-cd ewl-social-sentiment
+git clone https://github.com/New-Economics-Foundation-NEF/sentiment-lens.git
+cd sentiment-lens
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
 ```
 
 Optional extras enable the model backends and other features, for example
 `pip install -e ".[anthropic]"`. See the
-[installation page](https://new-economics-foundation-nef.github.io/ewl-social-sentiment/installation/)
+[installation page](https://new-economics-foundation-nef.github.io/sentiment-lens/installation/)
 for the full list and the environment variables.
 
 ## Quickstart
@@ -33,12 +33,12 @@ This runs on invented comments, with no API key and no network:
 
 ```bash
 OUT=$(mktemp -d)
-ewl-classify examples/synthetic_comments.csv --judge keyword --no-cache --output "$OUT/out.csv"
+slens-classify examples/synthetic_comments.csv --judge keyword --no-cache --output "$OUT/out.csv"
 ```
 
 It writes `out.csv` (the comments with their labels) and `out.csv.run.json` (a record of how
 they were produced). The
-[quickstart](https://new-economics-foundation-nef.github.io/ewl-social-sentiment/quickstart/)
+[quickstart](https://new-economics-foundation-nef.github.io/sentiment-lens/quickstart/)
 continues with scoring and correction.
 
 ## Data protection
@@ -49,12 +49,12 @@ Comment text, comment ids and author hashes are personal data under UK GDPR.
   `tests/check_no_personal_data.py` runs in CI and fails the build if a tracked file looks like
   comment data.
 - Cloud judges send comment text to the model provider. OpenAI and Google judges refuse to
-  start unless `EWL_EXTERNAL_PROCESSORS` names the provider; the Anthropic judge is not gated.
+  start unless `SLENS_EXTERNAL_PROCESSORS` names the provider; the Anthropic judge is not gated.
   Get data-protection sign-off first.
-- Collectors need `EWL_AUTHOR_SALT`, a secret kept outside the repository.
+- Collectors need `SLENS_AUTHOR_SALT`, a secret kept outside the repository.
 
 Read the
-[data protection page](https://new-economics-foundation-nef.github.io/ewl-social-sentiment/data-protection/)
+[data protection page](https://new-economics-foundation-nef.github.io/sentiment-lens/data-protection/)
 before you collect or label real comments.
 
 ## Tests
