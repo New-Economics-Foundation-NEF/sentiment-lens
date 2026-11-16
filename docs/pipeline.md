@@ -143,6 +143,7 @@ Coding, agreement and adjudication are covered in [Validation](validation.md).
 ## 5. Label
 
 ```bash
+export SLENS_EXTERNAL_PROCESSORS=anthropic   # only once data-protection sign-off is recorded
 slens-classify official-data/master.csv \
     --judge anthropic:claude-haiku-4-5 --sentiment llm:anthropic:claude-haiku-4-5 \
     --selector fixed --fixed-examples official-data/fixed_examples.csv \

@@ -51,8 +51,9 @@ thing that changes is the temperature.
   run's cache stays exactly as it was.
 - **`slens-gemma` refuses it.** `slens-gemma` is the frozen temperature-0 corpus run. If
   `SLENS_GEMMA_TEMPERATURE` is set to anything other than 0 it stops with a message and labels
-  nothing. Measure stability with `slens-evaluate`, as above, and unset the variable before the
-  next `slens-gemma` run.
+  nothing. Measure stability on the gold set with `slens-evaluate`, as above (its refusal
+  message also points to `slens-classify --judge gemma`, which honours the variable and labels a
+  file rather than scoring it). Unset the variable before the next `slens-gemma` run.
 
 ## Reading the results
 
@@ -90,7 +91,9 @@ thing that changes is the temperature.
     ```
 
     If either line prints `False`, the code, the examples file or a switch differs from the
-    frozen run, and the comparison is not like for like.
+    frozen run, and the comparison is not like for like. The snippet builds the prompts with the
+    default instrument switches: if the frozen run changed any of them, it will report a
+    mismatch for that reason alone.
 
 ## Cost
 

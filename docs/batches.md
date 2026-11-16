@@ -125,6 +125,7 @@ stored under exactly the key a live call would use. Labels from the two routes a
 interchangeable, and a gap can be filled with a live run.
 
 ```bash
+export SLENS_EXTERNAL_PROCESSORS=anthropic   # only once data-protection sign-off is recorded
 slens-anthropic-batch plan   corpus.csv --judge anthropic:claude-haiku-4-5 --sample 200 --seed 7
 slens-anthropic-batch submit corpus.csv --judge anthropic:claude-haiku-4-5 --sample 200 --seed 7 \
     --out-dir official-data/batch_trial --max-cost 20
@@ -136,7 +137,7 @@ slens-anthropic-batch compare official-data/batch_labelled.csv official-data/liv
 
 | Subcommand | What it does |
 |---|---|
-| `plan` | A dry run: request count and estimated cost. Sends and writes nothing. |
+| `plan` | A dry run: request count and estimated cost. Sends and writes nothing. Like every subcommand, it refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `anthropic`. |
 | `submit` | Runs the corpus through the real labelling code with a collector in place of the API. A reply already in the cache is skipped, so running it again sends only the gaps. Sends batches one at a time as they are built. `--max-cost` refuses before anything is written or sent if the pessimistic estimate is over the cap. Refuses an output folder started with different settings, input, prompts or cache specs, and refuses while earlier batches are not yet fetched. |
 | `status` | Progress of each batch. `--check-cache` counts comments whose replies are all cached, and why the others are not. |
 | `fetch` | Downloads finished batches into the cache. A refusal or a reply cut off at the token limit is counted and not cached; it is recorded by key in `batch_uncacheable.jsonl` so `replay` uses it and `submit` does not pay for it again (unless `--retry-uncacheable`). `--abandon BATCH_ID` gives up a batch whose results are gone. |
