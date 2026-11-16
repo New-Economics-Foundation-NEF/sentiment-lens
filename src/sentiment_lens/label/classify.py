@@ -12,18 +12,17 @@
     # whichever sentiment scorer won evaluate.py sentiment, not VADER
     python classify.py master.csv --sentiment llm:anthropic:claude-haiku-4-5 --cache cache.jsonl > out.csv
 
-Findings that motivated the first rewrite
+Problems that motivated the first rewrite
 -----------------------------------------
-Re-running the pilot classifier over the same 530 Musk/Reddit comments three
-times produced three different answers: runs 2 and 3 agreed on only 65% of
-comments, runs 1 and 2 on 50%. A number quoted from any single run is therefore
-not reproducible.
+An earlier classifier, re-run over the same comments, could give noticeably
+different answers from one run to the next, so a number quoted from any single
+run was not reproducible.
 
-Worse, `democracy` was never once assigned across the ~4,600 labelled rows in
-the pilot. `gemma3:1b` returned the word "policy" — a category that does not
-exist — and `get_close_matches(..., cutoff=0)` accepted any string however
-unrelated, so an off-list answer was quietly rewritten as one of the four
-rather than flagged.
+Worse, a very small model can answer with a word that is not one of the
+categories at all, and `get_close_matches(..., cutoff=0)` accepted any string
+however unrelated, so an off-list answer was quietly rewritten as one of the
+four rather than flagged. A category could then go unassigned for a whole run
+without anyone noticing.
 
 What this version adds
 ----------------------
@@ -273,7 +272,7 @@ def annotate_row(row, labels, unstable, ballots, result, domain_judge, sentiment
         row["neg"] = raw["neg"]
 
 
-DEFAULT_PROJECTIONS = (693, 83532)   # the gold set scored, and the batching corpus
+DEFAULT_PROJECTIONS = (1000, 100000)   # illustrative sizes: a gold set, and a full corpus
 
 
 def speed_report(latencies, calls_per_comment, concurrency, sizes, wall_seconds=None, comments=None):
@@ -322,8 +321,8 @@ def main():
     parser.add_argument("input_csv")
     parser.add_argument("--judge", default="ollama:gemma3:12b",
                         help=f"'<backend>:<model>'. Backends: {', '.join(judges.available())}. "
-                             f"The 1b model used in the pilot was too small to hold four "
-                             f"categories apart; prefer 12b or larger.")
+                             f"Very small models (around 1b parameters) tend to blur the four "
+                             f"categories together; prefer 12b or larger.")
     parser.add_argument("--selector", default="fixed",
                         help=f"Few-shot examples: {', '.join(examples_mod.available())}")
     parser.add_argument("--pool", help="Hand-coded CSV to retrieve examples from")
@@ -380,7 +379,7 @@ def main():
                         help="after the run, print how long N comments would take at this run's "
                              "speed (repeatable). Default: "
                              + " and ".join(f"{n:,}" for n in DEFAULT_PROJECTIONS)
-                             + " comments (the gold set and the batching corpus; see "
+                             + " comments (illustrative sizes for a gold set and a full corpus; see "
                              "DEFAULT_PROJECTIONS).")
     parser.add_argument("--sentiment", default="vader",
                         help=f"'vader', or 'llm:<judge spec>' e.g. 'llm:anthropic:claude-haiku-4-5'. "

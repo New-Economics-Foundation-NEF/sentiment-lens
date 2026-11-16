@@ -34,10 +34,10 @@ os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 if not os.environ.get("SLENS_AUTHOR_SALT"):
     os.environ["SLENS_AUTHOR_SALT"] = "test-harness-only-salt-do-not-use-for-real-data"
 
-# The OpenAI and Google judges refuse to be built unless the provider is listed here (a
-# data-protection gate). The harness uses fake clients and sends nothing anywhere, so it
-# approves them; the gate's own tests unset it.
-os.environ.setdefault("SLENS_EXTERNAL_PROCESSORS", "openai,google")
+# The Anthropic, OpenAI and Google judges refuse to be built unless the provider is listed
+# here (a data-protection gate). The harness uses fake clients and sends nothing anywhere, so
+# it approves them; the gate's own tests unset it.
+os.environ.setdefault("SLENS_EXTERNAL_PROCESSORS", "anthropic,openai,google")
 
 import statistics
 import subprocess
@@ -2489,31 +2489,31 @@ print("\nclean_videos: exact video-ID matching")
 from sentiment_lens.collect import clean_videos as _cv
 
 check("a watch URL, a youtu.be link, a shorts link and a bare ID all give the same video ID",
-      {_cv.video_id("https://www.youtube.com/watch?v=-dxftQC09H4"),
-       _cv.video_id("https://www.youtube.com/watch?v=-dxftQC09H4&t=30s"),
-       _cv.video_id("https://youtu.be/-dxftQC09H4"),
-       _cv.video_id("https://www.youtube.com/shorts/-dxftQC09H4"),
-       _cv.video_id("-dxftQC09H4")} == {"-dxftQC09H4"})
+      {_cv.video_id("https://www.youtube.com/watch?v=-aaaaaaaaaa"),
+       _cv.video_id("https://www.youtube.com/watch?v=-aaaaaaaaaa&t=30s"),
+       _cv.video_id("https://youtu.be/-aaaaaaaaaa"),
+       _cv.video_id("https://www.youtube.com/shorts/-aaaaaaaaaa"),
+       _cv.video_id("-aaaaaaaaaa")} == {"-aaaaaaaaaa"})
 check("a source that is not a video URL gives None, not a guess",
       _cv.video_id("https://example.com/page") is None and _cv.video_id("") is None)
 
-_vrows = ([{"source": "https://www.youtube.com/watch?v=-dxftQC09H4", "comment_id": f"a{i}"}
+_vrows = ([{"source": "https://www.youtube.com/watch?v=-aaaaaaaaaa", "comment_id": f"a{i}"}
            for i in range(3)]
           + [{"source": "https://www.youtube.com/watch?v=AAAAAAAAAAA", "comment_id": "b0"}])
-_kept_v, _gone_v = _cv.drop_videos(_vrows, {"-dxftQC09H4"})
-check("the hyphen-led ID removes exactly its own comments", len(_kept_v) == 1 and _gone_v["-dxftQC09H4"] == 3,
+_kept_v, _gone_v = _cv.drop_videos(_vrows, {"-aaaaaaaaaa"})
+check("the hyphen-led ID removes exactly its own comments", len(_kept_v) == 1 and _gone_v["-aaaaaaaaaa"] == 3,
       (len(_kept_v), _gone_v))
 try:
-    _cv.check_ids({"dxftQC09H4"}, known_ids={"-dxftQC09H4", "AAAAAAAAAAA"})
+    _cv.check_ids({"aaaaaaaaaa"}, known_ids={"-aaaaaaaaaa", "AAAAAAAAAAA"})
     check("an ID with its leading hyphen dropped is refused", False, "no SystemExit")
 except SystemExit as _e:
     _msg = str(_e)
     check("an ID with its leading hyphen dropped is refused, with the likely real one suggested",
-          "11" in _msg and "did you mean -dxftQC09H4" in _msg, _msg)
-_kept_sub, _ = _cv.drop_videos(_vrows, {"dxftQC09H4"})
+          "11" in _msg and "did you mean -aaaaaaaaaa" in _msg, _msg)
+_kept_sub, _ = _cv.drop_videos(_vrows, {"aaaaaaaaaa"})
 check("and a list entry that is only a substring of a real ID no longer removes anything",
       len(_kept_sub) == 4, len(_kept_sub))
-_cv.check_ids({"-dxftQC09H4", "AAAAAAAAAAA"})
+_cv.check_ids({"-aaaaaaaaaa", "AAAAAAAAAAA"})
 check("valid IDs, including one starting with a hyphen, pass the check", True)
 
 if project_file("excluded_video_ids.txt"):
@@ -5865,7 +5865,7 @@ try:
     check("it does not claim bit-exact determinism, so the scorecard says 'cache only'",
           _lj.deterministic is False)
 
-    _labels, _unstable, _ballots = _lj.label("She pays no tax at all", taxonomy.FIXED_EXAMPLES)
+    _labels, _unstable, _ballots = _lj.label("Her tax bill comes to almost nothing", taxonomy.FIXED_EXAMPLES)
     _c = _fake.calls[-1]
     check("one comment costs one call at --votes 3", len(_fake.calls) == 1, len(_fake.calls))
     check("the reply is parsed like every other arm's", _labels == ["democracy"], _labels)
@@ -5873,7 +5873,7 @@ try:
     check("the system prompt is exactly the shared prompt with the 25 fixed examples",
           _c["system"] == taxonomy.build_prompt(taxonomy.FIXED_EXAMPLES) and _c["roles"] == ["system", "user"])
     check("the comment goes in the user turn in the same form the API arms use",
-          _c["user"] == 'Classify this comment: "She pays no tax at all"', _c["user"])
+          _c["user"] == 'Classify this comment: "Her tax bill comes to almost nothing"', _c["user"])
     check("temperature 0, an explicit context window and a short answer limit are set, "
           "not left to Ollama's defaults",
           _c["options"]["temperature"] == 0 and _c["options"]["num_ctx"] == gemma_local.NUM_CTX
@@ -5991,7 +5991,7 @@ try:
         with open(_in, "w", newline="", encoding="utf-8-sig") as f:
             w = csv.DictWriter(f, fieldnames=["comment_id", "story", "body"])
             w.writeheader()
-            w.writerow({"comment_id": "a", "story": "musk", "body": "He pays no tax"})
+            w.writerow({"comment_id": "a", "story": "musk", "body": "His tax bill is almost nothing"})
             w.writerow({"comment_id": "b", "story": "jets", "body": "Nice video"})
             w.writerow({"comment_id": "c", "story": "musk", "body": "Tax dodging again"})
             w.writerow({"comment_id": "d", "story": "jets", "body": "First!"})
@@ -6869,7 +6869,7 @@ _install_fake_anthropic(_world)
 try:
     with tempfile.TemporaryDirectory() as _tb:
         _src = os.path.join(_tb, "corpus.csv")
-        _bodies = ["ERRBODY comment", "She pays no tax at all", "Nice video", "EXPBODY comment",
+        _bodies = ["ERRBODY comment", "Her tax bill comes to almost nothing", "Nice video", "EXPBODY comment",
                    "Tax dodging again", "First!", "REFUSE this one", "Billionaires and tax",
                    "LONGREPLY here", "Great clip", "Prices keep rising", "Another comment"]
         with open(_src, "w", newline="", encoding="utf-8-sig") as _f:
@@ -6911,7 +6911,7 @@ try:
               all(_re_ab.fullmatch(r"[0-9a-f]{64}", i) for i in _ids) and len(set(_ids)) == len(_ids) == 24)
         check("submit: the manifest holds ids, counts and hashes but no comment text",
               not any(w in open(os.path.join(_out_dir, "batch_manifest.json"), encoding="utf-8").read()
-                      for w in ("pays no tax", "Nice video", "Tax dodging")))
+                      for w in ("tax bill comes to", "Nice video", "Tax dodging")))
         check("submit: the manifest records the input hash and a prompt hash per story",
               _man["input"]["sha256"] and len(_man["prompts_sha256"]["domain_by_story"]) == 4
               and len(_man["prompts_sha256"]["sentiment_by_story"]) == 4)
@@ -7212,7 +7212,7 @@ try:
         with open(_clean, "w", newline="", encoding="utf-8-sig") as _f:
             _w = csv.DictWriter(_f, fieldnames=["comment_id", "story", "source", "body"])
             _w.writeheader()
-            for _i, _body in enumerate(["She pays no tax at all", "Nice video", "Tax dodging again", "First!",
+            for _i, _body in enumerate(["Her tax bill comes to almost nothing", "Nice video", "Tax dodging again", "First!",
                                         "Billionaires and tax", "Great clip", "Prices keep rising", "Another comment"]):
                 _w.writerow({"comment_id": f"d{_i}", "story": ["luigi", "musk", "jets", "propublica"][_i % 4],
                              "source": f"v{_i % 3}", "body": _body})
@@ -7365,11 +7365,11 @@ from sentiment_lens.label import instrument as _ix
 
 _orig_fx = list(taxonomy.FIXED_EXAMPLES)
 _SX_ROWS = [
-    ("x1", "She pays no tax at all and nobody stops her", "democracy", "2", "propublica"),
-    ("x2", "Why couldn't he invest that into climate change", "environment", "2", "musk"),
+    ("x1", "Her tax bill comes to almost nothing and nobody minds", "democracy", "2", "propublica"),
+    ("x2", "He could have put that fortune into cutting emissions instead", "environment", "2", "musk"),
     ("x3", "Great clip, thanks for posting it", "none", "0", "jets"),
-    ("x4", "You want a killer on the streets?", "social", "4", "luigi"),
-    ("x5", "Insurance is the biggest extortion racket", "economics, social", "1", "luigi"),
+    ("x4", "So you would rather a gunman walked free?", "social", "4", "luigi"),
+    ("x5", "Health insurers run the biggest shakedown going", "economics, social", "1", "luigi"),
     ("x6", "garbled text that cannot be read at all", "none", "-1", "musk"),
 ]
 
@@ -7405,12 +7405,12 @@ with tempfile.TemporaryDirectory() as _tx:
               and taxonomy.FIXED_EXAMPLE_STORIES == ["propublica", "musk", "jets", "luigi", "luigi", "musk"])
         check("the source record holds ids, labels, ratings and stories (not text)",
               taxonomy.FIXED_EXAMPLES_SOURCE["ratings"] == [2, 2, 0, 4, 1, -1]
-              and "She pays no tax" not in json.dumps(taxonomy.FIXED_EXAMPLES_SOURCE))
+              and "Her tax bill comes to" not in json.dumps(taxonomy.FIXED_EXAMPLES_SOURCE))
         _after = _sx.create("llm:stub", votes=1)._prompts
         _p = _after["musk"]
         check("the sentiment prompt now ends with the examples, each with its story and rating",
-              _p.index('[propublica] "She pays no tax at all and nobody stops her" -> 2') > _p.index("No words, no explanation.")
-              and '[luigi] "You want a killer on the streets?" -> 4' in _p
+              _p.index('[propublica] "Her tax bill comes to almost nothing and nobody minds" -> 2') > _p.index("No words, no explanation.")
+              and '[luigi] "So you would rather a gunman walked free?" -> 4' in _p
               and '[musk] "garbled text that cannot be read at all" -> -1' in _p
               and "the story each was posted under is in brackets" in _p)
         check("every story's sentiment prompt carries the same 6 examples",
@@ -7421,7 +7421,7 @@ with tempfile.TemporaryDirectory() as _tx:
               _dp.count(" -> ") >= 6 and not _re_sx.search(r" -> -?\d", _dp))
         _cp = _cx.build_prompt(taxonomy.FIXED_EXAMPLES, "luigi")
         check("the combined arm shows each example as 'domain | rating' with its story",
-              '[luigi] "Insurance is the biggest extortion racket" -> economics, social | 1' in _cp
+              '[luigi] "Health insurers run the biggest shakedown going" -> economics, social | 1' in _cp
               and '[musk] "garbled text that cannot be read at all" -> none | -1' in _cp
               and "Examples (domain | rating;" in _cp)
         _ix.apply(_tyx.SimpleNamespace(story_rules="on", stance_object="conduct", combined_domain_context="keep",
@@ -7483,7 +7483,7 @@ with tempfile.TemporaryDirectory() as _tx:
     _rec = json.load(open(_out + ".run.json", encoding="utf-8")) if os.path.exists(_out + ".run.json") else {}
     check("the run record notes the ratings and stories by id, never the text",
           _p.returncode == 0 and _rec.get("fixed_examples", {}).get("ratings") == [2, 2, 0, 4, 1, -1]
-          and "She pays no tax" not in json.dumps(_rec), _p.stderr[-300:])
+          and "Her tax bill comes to" not in json.dumps(_rec), _p.stderr[-300:])
     _p = subprocess.run([sys.executable, "-m", "sentiment_lens.analyse.evaluate", "sentiment", _gold, "--arm", "llm:stub",
                          "--fixed-examples", _p_rated], capture_output=True, text=True, env=_env_s)
     check("slens-evaluate sentiment leaves the six worked examples out of scoring",
@@ -7736,7 +7736,7 @@ with tempfile.TemporaryDirectory() as _tv:
                 _row = {name: "0" for name in _vf}
                 _row.update({"comment_id": f"v{_v}_{_i}", "source": f"vid{_v}",
                              "story": "luigi" if _v < 5 else "propublica",
-                             "body": "ZZVERBATIMMARKERZZ she pays no tax", "sentiment": "negative",
+                             "body": "ZZVERBATIMMARKERZZ her tax bill is tiny", "sentiment": "negative",
                              "sentiment_value": "2", "sentiment_unstable": "0",
                              "domain_unstable": "0", "domain_judge": "keyword:keywords.yml/none",
                              "sentiment_scorer": "vader",
@@ -7894,7 +7894,7 @@ try:
     _f0 = _FakeOllama()
     gemma_local.GemmaJudge._make_client = lambda self: _f0
     _j0 = judges.create("gemma", votes=3)
-    _j0.label("She pays no tax at all", taxonomy.FIXED_EXAMPLES)
+    _j0.label("Her tax bill comes to almost nothing", taxonomy.FIXED_EXAMPLES)
     check("default: still one vote, temperature 0, the key it always had, and a run record with no temperature key",
           _j0.votes == 1 and len(_f0.calls) == 1 and _f0.calls[-1]["options"]["temperature"] == 0
           and _j0.cache_spec == "gemma:" + _TAG and "temperature" not in _j0.preflight_info,
@@ -7903,7 +7903,7 @@ try:
     _f7 = _FakeOllama()
     gemma_local.GemmaJudge._make_client = lambda self: _f7
     _j7 = judges.create("gemma", votes=3)
-    _j7.label("She pays no tax at all", taxonomy.FIXED_EXAMPLES)
+    _j7.label("Her tax bill comes to almost nothing", taxonomy.FIXED_EXAMPLES)
     check("temperature 0.7: three votes really make three calls with different seeds",
           _j7.votes == 3 and len(_f7.calls) == 3
           and sorted(c["options"]["seed"] for c in _f7.calls) == [42, 43, 44], len(_f7.calls))
@@ -8058,17 +8058,17 @@ check("thinking_setting names what was sent: between_tools, disabled, thinking O
 
 
 print("\nclassify: the speed report uses the median call, not the wall clock")
-_sr = _clf_time.speed_report([2.0, 2.0, 2.0, 2.0, 5000.0], 6, 3, [693, 83532], wall_seconds=250000, comments=30)
+_sr = _clf_time.speed_report([2.0, 2.0, 2.0, 2.0, 5000.0], 6, 3, [1000, 100000], wall_seconds=250000, comments=30)
 check("the projection comes from the median call and the concurrency (2 s x 6 calls / 3 = 4 s a comment)",
       "typical call takes 2.0 s" in _sr[0] and "about 4.0 s per comment" in _sr[0]
-      and any("693 comments would take about 46 min 12 s" in l for l in _sr), _sr)
+      and any("1,000 comments would take about 1 h 06 min" in l for l in _sr), _sr)
 check("a wall clock far above the calls' own time is called out (a sleeping computer), not used",
       any("Ignore the wall-clock figure" in l for l in _sr))
 _sr_ok = _clf_time.speed_report([2.0] * 20, 6, 3, [100], wall_seconds=130, comments=30)
 check("a sensible wall clock is just shown", any("Wall clock for this run: 2 min 10 s" in l for l in _sr_ok), _sr_ok)
 check("an all-cached run says there is nothing to time",
-      "nothing to time" in _clf_time.speed_report([], 6, 3, [693])[0])
-check("the default projections are one constant", _clf_time.DEFAULT_PROJECTIONS == (693, 83532))
+      "nothing to time" in _clf_time.speed_report([], 6, 3, [1000])[0])
+check("the default projections are one constant", _clf_time.DEFAULT_PROJECTIONS == (1000, 100000))
 print("\nOpenAI arms: effort setting, prices, refusal, and the scorecard paths (fake client, no SDK needed)")
 import types as _types_oa
 import contextlib as _ctx_oa
@@ -10511,6 +10511,72 @@ finally:
         sys.modules.pop("anthropic", None)
     else:
         sys.modules["anthropic"] = _saved_anth
+
+print("\nAnthropic judge: refuses to start unless `anthropic` is an approved external processor")
+_saved_anth_g = sys.modules.get("anthropic")
+_old_ep_g = os.environ.get("SLENS_EXTERNAL_PROCESSORS")
+_built_an = {"n": 0}
+_fake_an = _tyb.ModuleType("anthropic")
+
+
+def _count_anthropic_client(*_a, **_k):
+    _built_an["n"] += 1
+    return _tyb.SimpleNamespace()
+
+
+_fake_an.Anthropic = _count_anthropic_client
+sys.modules["anthropic"] = _fake_an
+try:
+    os.environ.pop("SLENS_EXTERNAL_PROCESSORS", None)
+    try:
+        judges.create("anthropic:claude-haiku-4-5", votes=1)
+        _gate_an = None
+    except judges.ExternalProcessorNotApproved as _e:
+        _gate_an = str(_e)
+    check("without SLENS_EXTERNAL_PROCESSORS the Anthropic judge refuses to be built, names the sign-off, "
+          "and builds no client",
+          _gate_an is not None and "#100" in _gate_an and "SLENS_EXTERNAL_PROCESSORS=anthropic" in _gate_an
+          and _built_an["n"] == 0, (_gate_an, _built_an["n"]))
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = "openai,google"
+    try:
+        judges.create("anthropic:claude-haiku-4-5", votes=1)
+        _other_an = False
+    except judges.ExternalProcessorNotApproved:
+        _other_an = True
+    check("approving other providers does not approve Anthropic", _other_an and _built_an["n"] == 0)
+    try:
+        _sent.create("llm:anthropic:claude-haiku-4-5", votes=1)
+        _sent_an = False
+    except judges.ExternalProcessorNotApproved:
+        _sent_an = True
+    check("an llm:anthropic: sentiment scorer is refused the same way", _sent_an and _built_an["n"] == 0)
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = " Anthropic "
+    check("listing anthropic (case-insensitive) lets the judge be built",
+          judges.create("anthropic:claude-haiku-4-5", votes=1) is not None and _built_an["n"] == 1)
+    with tempfile.TemporaryDirectory() as _tg:
+        _gin = os.path.join(_tg, "corpus.csv")
+        with open(_gin, "w", newline="", encoding="utf-8-sig") as _f:
+            _w = csv.DictWriter(_f, fieldnames=["comment_id", "story", "source", "body"])
+            _w.writeheader()
+            _w.writerow({"comment_id": "g0", "story": "musk", "source": "v0", "body": "An invented comment"})
+        _env_g = {k: v for k, v in os.environ.items() if k != "SLENS_EXTERNAL_PROCESSORS"}
+        _env_g["SLENS_EXTERNAL_PROCESSORS"] = "openai,google"
+        _p_g = subprocess.run([sys.executable, "-m", "sentiment_lens.label.anthropic_batch", "submit", _gin,
+                               "--out-dir", os.path.join(_tg, "batch")],
+                              capture_output=True, text=True, env=_env_g)
+        check("slens-anthropic-batch submit refuses without anthropic approved, with the message and no traceback",
+              _p_g.returncode != 0 and "SLENS_EXTERNAL_PROCESSORS=anthropic" in _p_g.stderr
+              and "Traceback" not in _p_g.stderr and not os.path.exists(os.path.join(_tg, "batch", "batch_manifest.json")),
+              _p_g.stderr[-400:])
+finally:
+    if _old_ep_g is None:
+        os.environ.pop("SLENS_EXTERNAL_PROCESSORS", None)
+    else:
+        os.environ["SLENS_EXTERNAL_PROCESSORS"] = _old_ep_g
+    if _saved_anth_g is None:
+        sys.modules.pop("anthropic", None)
+    else:
+        sys.modules["anthropic"] = _saved_anth_g
 
 print()
 if skipped:

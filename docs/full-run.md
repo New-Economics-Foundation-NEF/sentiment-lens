@@ -56,9 +56,8 @@ Choose, and write down, before anything is labelled:
 
 The cache is keyed on all of it. A change later means labelling everything again.
 
-For an OpenAI or Gemini judge, set `SLENS_EXTERNAL_PROCESSORS` once your data-protection
-sign-off is recorded; without it the judge refuses to start. An Anthropic judge is not gated by
-that variable, so record its sign-off separately.
+For an Anthropic, OpenAI or Gemini judge, set `SLENS_EXTERNAL_PROCESSORS` once your
+data-protection sign-off is recorded; without it the judge refuses to start.
 
 **Redaction.** Decide whether to redact. If you do, redact a **copy** of
 `corpus_for_batching.csv` and of the gold file (`slens-redact --handles all --emails --phones

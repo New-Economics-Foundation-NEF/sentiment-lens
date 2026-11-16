@@ -63,6 +63,7 @@ nav:
       - Judges and scorers: judges.md
       - Long runs and batches: batches.md
       - Validation: validation.md
+      - Measuring label stability: stability.md
       - Correcting prevalence: correction.md
       - Full run, in order: full-run.md
       - Data protection: data-protection.md

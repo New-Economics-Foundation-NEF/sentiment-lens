@@ -48,9 +48,9 @@ Comment text, comment ids and author hashes are personal data under UK GDPR.
 - Never commit them. Keep all comment data in a git-ignored local folder.
   `tests/check_no_personal_data.py` runs in CI and fails the build if a tracked file looks like
   comment data.
-- Cloud judges send comment text to the model provider. OpenAI and Google judges refuse to
-  start unless `SLENS_EXTERNAL_PROCESSORS` names the provider; the Anthropic judge is not gated.
-  Get data-protection sign-off first.
+- Cloud judges send comment text to the model provider. Anthropic, OpenAI and Google judges
+  refuse to start unless `SLENS_EXTERNAL_PROCESSORS` names the provider. Get data-protection
+  sign-off first.
 - Collectors need `SLENS_AUTHOR_SALT`, a secret kept outside the repository.
 
 Read the
@@ -66,4 +66,5 @@ python tests/check_no_personal_data.py
 
 ## Licence
 
-Licence: to be decided by NEF.
+Released under the MIT License. See [LICENSE](LICENSE). Copyright (c) 2026 New Economics
+Foundation.

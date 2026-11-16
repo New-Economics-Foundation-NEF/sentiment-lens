@@ -1,8 +1,8 @@
 r"""Fill in missing comment_id values in a hand-coded sheet, from the original coding sheets.
 
-    python scripts/scratch_fill_comment_ids.py gold_sample_Jamie_complete.xlsx \
-        --reference official-data/gold_sample_to_code_Abhijay.xlsx \
-        --output official-data/gold_sample_Jamie_complete_ids.xlsx
+    python scripts/scratch_fill_comment_ids.py gold_sample_coder_a_complete.xlsx \
+        --reference official-data/gold_sample_to_code_coder_b.xlsx \
+        --output official-data/gold_sample_coder_a_complete_ids.xlsx
 
 For each row whose comment_id is blank, the comment text (`body`) is looked up in the
 reference sheet(s) -- the file the comments were originally sent out in, which has the

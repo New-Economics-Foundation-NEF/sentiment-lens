@@ -584,7 +584,8 @@ def main(argv=None):
                    help="with --full: a file whose comment_ids should be absent (repeatable)")
     p.add_argument("--out-dir", required=True)
     p.add_argument("--batch-size", type=int, default=1000,
-                   help="comments per batch (default 1,000: about 40 minutes at 2.4 s a comment)")
+                   help="comments per batch (default 1,000). Pick a size a coder or a model run "
+                        "can finish in one sitting.")
     p.add_argument("--shuffle-seed", type=int, default=7,
                    help="seed for the shuffle (default 7)")
     p.add_argument("--no-shuffle", action="store_true",

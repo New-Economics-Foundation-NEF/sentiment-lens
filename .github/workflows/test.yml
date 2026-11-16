@@ -28,8 +28,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The floor declared in pyproject.toml and a current release. Jamie
-        # runs Windows and this runs Linux, so the matrix is about the
+        # The floor declared in pyproject.toml and a current release. Coders
+        # may run Windows and this runs Linux, so the matrix is about the
         # language version rather than the OS -- the Windows-specific paths
         # (cp1252 stdout, the BOM, CRLF row terminators) are covered by
         # assertions in the harness rather than by a runner.

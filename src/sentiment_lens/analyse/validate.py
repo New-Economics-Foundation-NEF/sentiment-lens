@@ -2321,8 +2321,8 @@ def main():
                              "(stance / irrelevant / uncodeable) is reported either way.")
     parser.add_argument("--extra-inputs", nargs="+",
                         help="`interrater` only, optional: any THIRD or later coder's completed "
-                             "file(s), for more than two overlapping coders (e.g. the shared "
-                             "50-row core coded by all 5). Passing this switches the report from "
+                             "file(s), for more than two overlapping coders (e.g. a shared "
+                             "core sample coded by every coder). Passing this switches the report from "
                              "pairwise Cohen's kappa to Fleiss' kappa across every file given "
                              "(input_csv + --second-input + --extra-inputs).")
     parser.add_argument("--exclude-ids",
@@ -2341,8 +2341,8 @@ def main():
                              "as an example.")
     parser.add_argument("--core-ids", help="`selfconsistency` only: a file naming the comment_ids "
                                            "to restrict to (one per line, or any CSV with a "
-                                           "comment_id column) -- e.g. official-data/"
-                                           "gold_sample_core_50.csv, so this measures the LLM's "
+                                           "comment_id column) -- e.g. the shared core "
+                                           "sample every coder coded, so this measures the LLM's "
                                            "self-consistency on the SAME comments the human "
                                            "coder-vs-coder kappa was measured on, not a different, "
                                            "much larger set that isn't a fair comparison. Omit to "

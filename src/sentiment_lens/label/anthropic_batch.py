@@ -155,8 +155,9 @@ def build_context(settings):
     cache = settings["cache"]
     try:
         judge = judges.create(settings["judge"], votes=settings["votes"], cache_path=cache)
-    except judges.PriceUnavailable as error:
-        sys.exit(str(error))                  # an unpriced model: nothing is planned or sent
+    except (judges.ExternalProcessorNotApproved, judges.PriceUnavailable,
+            judges.SettingRefused) as error:
+        sys.exit(str(error))                  # not approved or unpriced: nothing is planned or sent
     if not isinstance(judge, judges.AnthropicJudge):
         sys.exit("slens-anthropic-batch only works with an anthropic: judge "
                  f"(got {settings['judge']!r}).")
@@ -674,8 +675,12 @@ def estimate_report(ctx, submitter, counts, n_comments, dry_run):
 
 # ---------------------------------------------------------------- status
 def _client_for(manifest):
-    judge = judges.create(manifest["settings"]["judge"], votes=1,
-                          cache_path=manifest["settings"]["cache"])
+    try:
+        judge = judges.create(manifest["settings"]["judge"], votes=1,
+                              cache_path=manifest["settings"]["cache"])
+    except (judges.ExternalProcessorNotApproved, judges.PriceUnavailable,
+            judges.SettingRefused) as error:
+        sys.exit(str(error))
     return judge
 
 

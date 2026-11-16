@@ -125,9 +125,10 @@ def require_external_processor(name):
 
     The gold set and the corpus are unpublished comment data, and each provider that receives
     them is a further external processor needing data-protection sign-off (#100, C3). Nothing
-    reaches OpenAI or Google unless the environment variable SLENS_EXTERNAL_PROCESSORS lists the
-    provider (comma-separated, for example "openai,google"), to be set only once the sign-off is
-    recorded. A local model (Ollama, Gemma) sends nothing anywhere and is not gated."""
+    reaches Anthropic, OpenAI or Google unless the environment variable
+    SLENS_EXTERNAL_PROCESSORS lists the provider (comma-separated, for example
+    "anthropic,openai"), to be set only once the sign-off is recorded. A local model (Ollama,
+    Gemma) sends nothing anywhere and is not gated."""
     approved = {part.strip().lower()
                 for part in os.environ.get("SLENS_EXTERNAL_PROCESSORS", "").split(",") if part.strip()}
     if name.lower() not in approved:
@@ -135,7 +136,7 @@ def require_external_processor(name):
             f"Running this model sends comment text to {name}, which has not been approved as an "
             f"external processor for this project (data-protection sign-off, #100 C3). Nothing "
             f"was sent. Once the sign-off is recorded, set SLENS_EXTERNAL_PROCESSORS={name} "
-            f"(several providers: comma-separated, for example openai,google).")
+            f"(several providers: comma-separated, for example anthropic,openai).")
 
 
 class ReasoningEffortRejected(RuntimeError):
@@ -873,6 +874,10 @@ class AnthropicJudge(Judge):
 
     def __init__(self, model=None, **kwargs):
         super().__init__(model, **kwargs)
+        # Before anything else: no data-protection sign-off, nothing is built or sent, exactly
+        # as for the OpenAI and Gemini judges. This covers slens-anthropic-batch too, which
+        # builds its client through this judge.
+        require_external_processor("anthropic")
         # An unpriced model (or a malformed SLENS_ANTHROPIC_PRICES) is refused here, before
         # anything is sent, as the OpenAI and Gemini judges do.
         price_for(self.model)

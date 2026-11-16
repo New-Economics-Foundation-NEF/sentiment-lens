@@ -62,6 +62,11 @@ def main():
         print(f"Counting with the {len(taxonomy.FIXED_EXAMPLES)} fixed examples in "
               f"{args.fixed_examples} (ratings: {'yes' if taxonomy.FIXED_EXAMPLE_RATINGS else 'no'}).")
 
+    # The prompts carry the example comments, so this is gated like the anthropic: judge.
+    try:
+        judges.require_external_processor("anthropic")
+    except judges.ExternalProcessorNotApproved as error:
+        sys.exit(str(error))
     try:
         import anthropic
     except ImportError:

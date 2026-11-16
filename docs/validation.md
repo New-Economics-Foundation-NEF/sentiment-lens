@@ -161,6 +161,8 @@ example ids are known, and the built-in synthetic examples were not used, a warn
 `slens-evaluate` runs one or more arms directly on a hand-coded file and prints a scorecard.
 
 ```bash
+export SLENS_EXTERNAL_PROCESSORS=anthropic   # only once data-protection sign-off is recorded
+
 slens-evaluate scorecard gold_heldout.csv \
     --arm keyword/none --arm anthropic:claude-haiku-4-5/fixed \
     --fixed-examples official-data/fixed_examples.csv --cache official-data/eval_cache.jsonl

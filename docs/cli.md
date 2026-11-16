@@ -29,11 +29,11 @@ options:
   --search QUERY        Search term instead of URLs; repeatable. Each query contributes candidates
                         to one shared pool, deduplicated by video ID, and the hybrid draw happens
                         once over that pool. Repeat it when a story is discussed under several
-                        names: the Oxfam inequality report is covered under 'Davos', 'world's
-                        richest 1%' and 'wealth gap' without ever being named, and a single query
-                        found only 5 videos clearing --min-comments against 25 for Luigi. Five
-                        videos is too few for a clustered interval to mean anything, so this is a
-                        sample-size fix, not a convenience.
+                        names: a report or event can be covered under several phrasings without
+                        ever being named, and a single query may then find only a handful of
+                        videos clearing --min-comments. A handful of videos is too few for a
+                        clustered interval to mean anything, so this is a sample-size fix, not a
+                        convenience.
   --top-n TOP_N         Hybrid video selection: take this many videos by relevance first (default
                         10), then fill up to --target-videos at random. See the design-effect note
                         on search_youtube() for why this isn't pure relevance or pure random.
@@ -45,17 +45,18 @@ options:
                         interval.
   --drop-non-lang       Actually discard comments whose detected language differs from --lang,
                         instead of only recording it. Off by default and worth leaving off:
-                        measured over 313 comments this removed 8 and all 8 were English (see
-                        #23). The detected_lang column is written either way, so filtering
+                        language detectors misread short comments, and a check of this filter
+                        found that the comments it removed were in fact in the wanted language
+                        (see #23). The detected_lang column is written either way, so filtering
                         downstream stays reversible.
   --max-shorts-seconds MAX_SHORTS_SECONDS
                         Exclude --search results at or under this many seconds as YouTube Shorts
                         (0 = keep everything). The Data API exposes no authoritative is-a-Short
                         flag, so this is a duration heuristic. Default 60 is deliberately
                         conservative; 180 is the current maximum Shorts length and excludes far
-                        more, including short clips from credible channels. Measured on 50 results
-                        for 'billionaire wealth tax': 12 videos at or under 60s, 27 at or under
-                        180s. Record whichever value was used.
+                        more, including short clips from credible channels. The two thresholds can
+                        exclude very different numbers of videos, so check the effect on your own
+                        searches and record whichever value was used.
   --min-comments MIN_COMMENTS
                         Only consider search results with MORE than this many comments (soft-
                         coded: raise it to demand a bigger comment section before a video is
@@ -117,11 +118,11 @@ options:
   --search QUERY        Search term instead of URLs; repeatable. Each query contributes candidates
                         to one shared pool, deduplicated by video ID, and the hybrid draw happens
                         once over that pool. Repeat it when a story is discussed under several
-                        names: the Oxfam inequality report is covered under 'Davos', 'world's
-                        richest 1%' and 'wealth gap' without ever being named, and a single query
-                        found only 5 videos clearing --min-comments against 25 for Luigi. Five
-                        videos is too few for a clustered interval to mean anything, so this is a
-                        sample-size fix, not a convenience.
+                        names: a report or event can be covered under several phrasings without
+                        ever being named, and a single query may then find only a handful of
+                        videos clearing --min-comments. A handful of videos is too few for a
+                        clustered interval to mean anything, so this is a sample-size fix, not a
+                        convenience.
   --top-n TOP_N         Hybrid video selection: take this many videos by relevance first (default
                         10), then fill up to --target-videos at random. See the design-effect note
                         on search_youtube() for why this isn't pure relevance or pure random.
@@ -133,17 +134,18 @@ options:
                         interval.
   --drop-non-lang       Actually discard comments whose detected language differs from --lang,
                         instead of only recording it. Off by default and worth leaving off:
-                        measured over 313 comments this removed 8 and all 8 were English (see
-                        #23). The detected_lang column is written either way, so filtering
+                        language detectors misread short comments, and a check of this filter
+                        found that the comments it removed were in fact in the wanted language
+                        (see #23). The detected_lang column is written either way, so filtering
                         downstream stays reversible.
   --max-shorts-seconds MAX_SHORTS_SECONDS
                         Exclude --search results at or under this many seconds as YouTube Shorts
                         (0 = keep everything). The Data API exposes no authoritative is-a-Short
                         flag, so this is a duration heuristic. Default 60 is deliberately
                         conservative; 180 is the current maximum Shorts length and excludes far
-                        more, including short clips from credible channels. Measured on 50 results
-                        for 'billionaire wealth tax': 12 videos at or under 60s, 27 at or under
-                        180s. Record whichever value was used.
+                        more, including short clips from credible channels. The two thresholds can
+                        exclude very different numbers of videos, so check the effect on your own
+                        searches and record whichever value was used.
   --min-comments MIN_COMMENTS
                         Only consider search results with MORE than this many comments (soft-
                         coded: raise it to demand a bigger comment section before a video is
@@ -379,7 +381,8 @@ options:
   --exclude FILE        with --full: a file whose comment_ids should be absent (repeatable)
   --out-dir OUT_DIR
   --batch-size BATCH_SIZE
-                        comments per batch (default 1,000: about 40 minutes at 2.4 s a comment)
+                        comments per batch (default 1,000). Pick a size a coder or a model run can
+                        finish in one sitting.
   --shuffle-seed SHUFFLE_SEED
                         seed for the shuffle (default 7)
   --no-shuffle          keep the corpus file's order (batches are then contiguous slices)
@@ -704,8 +707,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --judge JUDGE         '<backend>:<model>'. Backends: anthropic, combined, gemma, google,
-                        keyword, manual, ollama, openai, stub. The 1b model used in the pilot was
-                        too small to hold four categories apart; prefer 12b or larger.
+                        keyword, manual, ollama, openai, stub. Very small models (around 1b
+                        parameters) tend to blur the four categories together; prefer 12b or
+                        larger.
   --selector SELECTOR   Few-shot examples: fixed, fixed_random, none, retrieved
   --pool POOL           Hand-coded CSV to retrieve examples from
   --k K                 Examples to retrieve (--selector retrieved), or to draw (--selector
@@ -746,8 +750,8 @@ options:
                         supplies everything already answered); the cap applies to each run
                         separately. Default: no cap.
   --project-to N        after the run, print how long N comments would take at this run's speed
-                        (repeatable). Default: 693 and 83,532 comments (the gold set and the
-                        batching corpus; see DEFAULT_PROJECTIONS).
+                        (repeatable). Default: 1,000 and 100,000 comments (illustrative sizes for
+                        a gold set and a full corpus; see DEFAULT_PROJECTIONS).
   --sentiment SENTIMENT
                         'vader', or 'llm:<judge spec>' e.g. 'llm:anthropic:claude-haiku-4-5'.
                         Whichever arm won evaluate.py sentiment. Available: combined, llm, stub,
@@ -968,9 +972,9 @@ options:
                         uncodeable) is reported either way.
   --extra-inputs EXTRA_INPUTS [EXTRA_INPUTS ...]
                         `interrater` only, optional: any THIRD or later coder's completed file(s),
-                        for more than two overlapping coders (e.g. the shared 50-row core coded by
-                        all 5). Passing this switches the report from pairwise Cohen's kappa to
-                        Fleiss' kappa across every file given (input_csv + --second-input +
+                        for more than two overlapping coders (e.g. a shared core sample coded by
+                        every coder). Passing this switches the report from pairwise Cohen's kappa
+                        to Fleiss' kappa across every file given (input_csv + --second-input +
                         --extra-inputs).
   --exclude-ids EXCLUDE_IDS
                         `score` only: a file of comment_ids (one per line, or a CSV with a
@@ -985,9 +989,9 @@ options:
                         known (no run record beside the file and no --exclude-ids). Use it only
                         when none of the gold comments was shown to the model as an example.
   --core-ids CORE_IDS   `selfconsistency` only: a file naming the comment_ids to restrict to (one
-                        per line, or any CSV with a comment_id column) -- e.g. official-
-                        data/gold_sample_core_50.csv, so this measures the LLM's self-consistency
-                        on the SAME comments the human coder-vs-coder kappa was measured on, not a
+                        per line, or any CSV with a comment_id column) -- e.g. the shared core
+                        sample every coder coded, so this measures the LLM's self-consistency on
+                        the SAME comments the human coder-vs-coder kappa was measured on, not a
                         different, much larger set that isn't a fair comparison. Omit to measure
                         over every row in input_csv instead.
   --compare-json COMPARE_JSON
