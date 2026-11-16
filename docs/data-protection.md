@@ -68,16 +68,17 @@ data-protection sign-off before you use one.
 |---|---|---|
 | `openai:` | OpenAI | Refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `openai`. Nothing is sent. |
 | `google:` | Google | Refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `google`. Nothing is sent. |
-| `anthropic:` and `slens-anthropic-batch` | Anthropic | **Not gated.** The code sends text as soon as `ANTHROPIC_API_KEY` is set. Record the sign-off before you run it. Anthropic keeps batch results for 29 days. |
+| `anthropic:` and `slens-anthropic-batch` | Anthropic | Refuses to start unless `SLENS_EXTERNAL_PROCESSORS` lists `anthropic`. Nothing is sent. Anthropic keeps batch results for 29 days. |
 | `ollama:`, `gemma`, `slens-gemma` | nowhere: runs on your machine | Not gated. Make sure `OLLAMA_HOST` (or `--host`) points at a machine you control. |
 | `keyword`, `stub` | nowhere | — |
 | `manual` | wherever you paste the prompt | You are the processor: do not paste real comments into a service without sign-off. |
 
-Set `SLENS_EXTERNAL_PROCESSORS` (comma-separated, for example `openai,google`) only once the
+Set `SLENS_EXTERNAL_PROCESSORS` (comma-separated, for example `anthropic,openai`) only once the
 sign-off is recorded.
 
 `scripts/scratch_count_prompt_tokens.py --fixed-examples FILE` sends the prompts, including the
-example comments, to Anthropic's token-counting endpoint.
+example comments, to Anthropic's token-counting endpoint. It refuses to run unless
+`SLENS_EXTERNAL_PROCESSORS` lists `anthropic`.
 
 ## Redaction
 

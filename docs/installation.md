@@ -81,7 +81,7 @@ cannot reach your shell history or a log.
 
 | Variable | What it does |
 |---|---|
-| `SLENS_EXTERNAL_PROCESSORS` | A comma-separated list of the cloud providers you have approved to receive comment text, for example `openai,google`. The `openai:` and `google:` judges refuse to start unless their provider is listed, and nothing is sent. Set it only once your data-protection sign-off is recorded. The `anthropic:` judge is **not** gated by this variable. See [Data protection](data-protection.md). |
+| `SLENS_EXTERNAL_PROCESSORS` | A comma-separated list of the cloud providers you have approved to receive comment text, for example `anthropic,openai`. The `anthropic:`, `openai:` and `google:` judges (and `slens-anthropic-batch`) refuse to start unless their provider is listed, and nothing is sent. Set it only once your data-protection sign-off is recorded. See [Data protection](data-protection.md). |
 
 ### Model settings
 

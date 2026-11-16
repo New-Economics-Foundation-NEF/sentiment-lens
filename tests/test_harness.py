@@ -34,10 +34,10 @@ os.chdir(pathlib.Path(__file__).resolve().parent.parent)
 if not os.environ.get("SLENS_AUTHOR_SALT"):
     os.environ["SLENS_AUTHOR_SALT"] = "test-harness-only-salt-do-not-use-for-real-data"
 
-# The OpenAI and Google judges refuse to be built unless the provider is listed here (a
-# data-protection gate). The harness uses fake clients and sends nothing anywhere, so it
-# approves them; the gate's own tests unset it.
-os.environ.setdefault("SLENS_EXTERNAL_PROCESSORS", "openai,google")
+# The Anthropic, OpenAI and Google judges refuse to be built unless the provider is listed
+# here (a data-protection gate). The harness uses fake clients and sends nothing anywhere, so
+# it approves them; the gate's own tests unset it.
+os.environ.setdefault("SLENS_EXTERNAL_PROCESSORS", "anthropic,openai,google")
 
 import statistics
 import subprocess
@@ -10511,6 +10511,72 @@ finally:
         sys.modules.pop("anthropic", None)
     else:
         sys.modules["anthropic"] = _saved_anth
+
+print("\nAnthropic judge: refuses to start unless `anthropic` is an approved external processor")
+_saved_anth_g = sys.modules.get("anthropic")
+_old_ep_g = os.environ.get("SLENS_EXTERNAL_PROCESSORS")
+_built_an = {"n": 0}
+_fake_an = _tyb.ModuleType("anthropic")
+
+
+def _count_anthropic_client(*_a, **_k):
+    _built_an["n"] += 1
+    return _tyb.SimpleNamespace()
+
+
+_fake_an.Anthropic = _count_anthropic_client
+sys.modules["anthropic"] = _fake_an
+try:
+    os.environ.pop("SLENS_EXTERNAL_PROCESSORS", None)
+    try:
+        judges.create("anthropic:claude-haiku-4-5", votes=1)
+        _gate_an = None
+    except judges.ExternalProcessorNotApproved as _e:
+        _gate_an = str(_e)
+    check("without SLENS_EXTERNAL_PROCESSORS the Anthropic judge refuses to be built, names the sign-off, "
+          "and builds no client",
+          _gate_an is not None and "#100" in _gate_an and "SLENS_EXTERNAL_PROCESSORS=anthropic" in _gate_an
+          and _built_an["n"] == 0, (_gate_an, _built_an["n"]))
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = "openai,google"
+    try:
+        judges.create("anthropic:claude-haiku-4-5", votes=1)
+        _other_an = False
+    except judges.ExternalProcessorNotApproved:
+        _other_an = True
+    check("approving other providers does not approve Anthropic", _other_an and _built_an["n"] == 0)
+    try:
+        _sent.create("llm:anthropic:claude-haiku-4-5", votes=1)
+        _sent_an = False
+    except judges.ExternalProcessorNotApproved:
+        _sent_an = True
+    check("an llm:anthropic: sentiment scorer is refused the same way", _sent_an and _built_an["n"] == 0)
+    os.environ["SLENS_EXTERNAL_PROCESSORS"] = " Anthropic "
+    check("listing anthropic (case-insensitive) lets the judge be built",
+          judges.create("anthropic:claude-haiku-4-5", votes=1) is not None and _built_an["n"] == 1)
+    with tempfile.TemporaryDirectory() as _tg:
+        _gin = os.path.join(_tg, "corpus.csv")
+        with open(_gin, "w", newline="", encoding="utf-8-sig") as _f:
+            _w = csv.DictWriter(_f, fieldnames=["comment_id", "story", "source", "body"])
+            _w.writeheader()
+            _w.writerow({"comment_id": "g0", "story": "musk", "source": "v0", "body": "An invented comment"})
+        _env_g = {k: v for k, v in os.environ.items() if k != "SLENS_EXTERNAL_PROCESSORS"}
+        _env_g["SLENS_EXTERNAL_PROCESSORS"] = "openai,google"
+        _p_g = subprocess.run([sys.executable, "-m", "sentiment_lens.label.anthropic_batch", "submit", _gin,
+                               "--out-dir", os.path.join(_tg, "batch")],
+                              capture_output=True, text=True, env=_env_g)
+        check("slens-anthropic-batch submit refuses without anthropic approved, with the message and no traceback",
+              _p_g.returncode != 0 and "SLENS_EXTERNAL_PROCESSORS=anthropic" in _p_g.stderr
+              and "Traceback" not in _p_g.stderr and not os.path.exists(os.path.join(_tg, "batch", "batch_manifest.json")),
+              _p_g.stderr[-400:])
+finally:
+    if _old_ep_g is None:
+        os.environ.pop("SLENS_EXTERNAL_PROCESSORS", None)
+    else:
+        os.environ["SLENS_EXTERNAL_PROCESSORS"] = _old_ep_g
+    if _saved_anth_g is None:
+        sys.modules.pop("anthropic", None)
+    else:
+        sys.modules["anthropic"] = _saved_anth_g
 
 print()
 if skipped:
