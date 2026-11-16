@@ -21,9 +21,9 @@ Registering an app takes a few minutes at https://www.reddit.com/prefs/apps
 Other fixes carried over
 ------------------------
 * Collapsed branches ("load more comments") are now followed. The old code
-  silently skipped Reddit's `more` stubs, which is why every large thread in the
-  pilot corpus stopped near 190-200 comments — those totals measured the page
-  cap, not the volume of discussion.
+  silently skipped Reddit's `more` stubs, so every large thread stopped at about
+  the same count — a total that measured the page cap, not the volume of
+  discussion.
 * Requests are throttled and retried, so a rate limit cannot truncate a run into
   a partial file that looks complete.
 * Usernames are hashed at the point of collection and deleted/removed comments

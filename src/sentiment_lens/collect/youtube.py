@@ -455,12 +455,12 @@ def main():
                         help="Search term instead of URLs; repeatable. Each query contributes "
                              "candidates to one shared pool, deduplicated by video ID, and the "
                              "hybrid draw happens once over that pool. Repeat it when a story "
-                             "is discussed under several names: the Oxfam inequality report is "
-                             "covered under 'Davos', \'world's richest 1%%\' and 'wealth gap' "
-                             "without ever being named, and a single query found only 5 videos "
-                             "clearing --min-comments against 25 for Luigi. Five videos is too "
-                             "few for a clustered interval to mean anything, so this is a "
-                             "sample-size fix, not a convenience.")
+                             "is discussed under several names: a report or event can be covered "
+                             "under several phrasings without ever being named, and a single "
+                             "query may then find only a handful of videos clearing "
+                             "--min-comments. A handful of videos is too few for a clustered "
+                             "interval to mean anything, so this is a sample-size fix, not a "
+                             "convenience.")
     parser.add_argument("--top-n", type=int, default=10,
                         help="Hybrid video selection: take this many videos by relevance "
                              "first (default 10), then fill up to --target-videos at random. "
@@ -475,8 +475,9 @@ def main():
     parser.add_argument("--drop-non-lang", action="store_true",
                         help="Actually discard comments whose detected language differs from "
                              "--lang, instead of only recording it. Off by default and worth "
-                             "leaving off: measured over 313 comments this removed 8 and all 8 "
-                             "were English (see #23). The detected_lang column is written "
+                             "leaving off: language detectors misread short comments, and a "
+                             "check of this filter found that the comments it removed were in "
+                             "fact in the wanted language (see #23). The detected_lang column is written "
                              "either way, so filtering downstream stays reversible.")
     parser.add_argument("--max-shorts-seconds", type=int, default=60,
                         help="Exclude --search results at or under this many seconds as YouTube "
@@ -484,9 +485,9 @@ def main():
                              "authoritative is-a-Short flag, so this is a duration heuristic. "
                              "Default 60 is deliberately conservative; 180 is the current "
                              "maximum Shorts length and excludes far more, including short "
-                             "clips from credible channels. Measured on 50 results for "
-                             "'billionaire wealth tax': 12 videos at or under 60s, 27 at or "
-                             "under 180s. Record whichever value was used.")
+                             "clips from credible channels. The two thresholds can exclude "
+                             "very different numbers of videos, so check the effect on your "
+                             "own searches and record whichever value was used.")
     parser.add_argument("--min-comments", type=int, default=0,
                         help="Only consider search results with MORE than this many comments "
                              "(soft-coded: raise it to demand a bigger comment section before "

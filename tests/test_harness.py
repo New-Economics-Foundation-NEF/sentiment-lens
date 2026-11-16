@@ -8058,17 +8058,17 @@ check("thinking_setting names what was sent: between_tools, disabled, thinking O
 
 
 print("\nclassify: the speed report uses the median call, not the wall clock")
-_sr = _clf_time.speed_report([2.0, 2.0, 2.0, 2.0, 5000.0], 6, 3, [693, 83532], wall_seconds=250000, comments=30)
+_sr = _clf_time.speed_report([2.0, 2.0, 2.0, 2.0, 5000.0], 6, 3, [1000, 100000], wall_seconds=250000, comments=30)
 check("the projection comes from the median call and the concurrency (2 s x 6 calls / 3 = 4 s a comment)",
       "typical call takes 2.0 s" in _sr[0] and "about 4.0 s per comment" in _sr[0]
-      and any("693 comments would take about 46 min 12 s" in l for l in _sr), _sr)
+      and any("1,000 comments would take about 1 h 06 min" in l for l in _sr), _sr)
 check("a wall clock far above the calls' own time is called out (a sleeping computer), not used",
       any("Ignore the wall-clock figure" in l for l in _sr))
 _sr_ok = _clf_time.speed_report([2.0] * 20, 6, 3, [100], wall_seconds=130, comments=30)
 check("a sensible wall clock is just shown", any("Wall clock for this run: 2 min 10 s" in l for l in _sr_ok), _sr_ok)
 check("an all-cached run says there is nothing to time",
-      "nothing to time" in _clf_time.speed_report([], 6, 3, [693])[0])
-check("the default projections are one constant", _clf_time.DEFAULT_PROJECTIONS == (693, 83532))
+      "nothing to time" in _clf_time.speed_report([], 6, 3, [1000])[0])
+check("the default projections are one constant", _clf_time.DEFAULT_PROJECTIONS == (1000, 100000))
 print("\nOpenAI arms: effort setting, prices, refusal, and the scorecard paths (fake client, no SDK needed)")
 import types as _types_oa
 import contextlib as _ctx_oa
