@@ -66,4 +66,5 @@ python tests/check_no_personal_data.py
 
 ## Licence
 
-Licence: to be decided by NEF.
+Released under the MIT License. See [LICENSE](LICENSE). Copyright (c) 2026 New Economics
+Foundation.

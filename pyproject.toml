@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "sentiment-lens"
 version = "0.1.0"
 description = "Extreme Wealth Line: collecting and labelling social media comments about extreme wealth"
 requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
 
 # Only what every path needs. The optional backends stay optional on purpose:
 # a missing one disables an arm of the scorecard rather than breaking the run,
