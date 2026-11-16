@@ -2489,31 +2489,31 @@ print("\nclean_videos: exact video-ID matching")
 from sentiment_lens.collect import clean_videos as _cv
 
 check("a watch URL, a youtu.be link, a shorts link and a bare ID all give the same video ID",
-      {_cv.video_id("https://www.youtube.com/watch?v=-dxftQC09H4"),
-       _cv.video_id("https://www.youtube.com/watch?v=-dxftQC09H4&t=30s"),
-       _cv.video_id("https://youtu.be/-dxftQC09H4"),
-       _cv.video_id("https://www.youtube.com/shorts/-dxftQC09H4"),
-       _cv.video_id("-dxftQC09H4")} == {"-dxftQC09H4"})
+      {_cv.video_id("https://www.youtube.com/watch?v=-aaaaaaaaaa"),
+       _cv.video_id("https://www.youtube.com/watch?v=-aaaaaaaaaa&t=30s"),
+       _cv.video_id("https://youtu.be/-aaaaaaaaaa"),
+       _cv.video_id("https://www.youtube.com/shorts/-aaaaaaaaaa"),
+       _cv.video_id("-aaaaaaaaaa")} == {"-aaaaaaaaaa"})
 check("a source that is not a video URL gives None, not a guess",
       _cv.video_id("https://example.com/page") is None and _cv.video_id("") is None)
 
-_vrows = ([{"source": "https://www.youtube.com/watch?v=-dxftQC09H4", "comment_id": f"a{i}"}
+_vrows = ([{"source": "https://www.youtube.com/watch?v=-aaaaaaaaaa", "comment_id": f"a{i}"}
            for i in range(3)]
           + [{"source": "https://www.youtube.com/watch?v=AAAAAAAAAAA", "comment_id": "b0"}])
-_kept_v, _gone_v = _cv.drop_videos(_vrows, {"-dxftQC09H4"})
-check("the hyphen-led ID removes exactly its own comments", len(_kept_v) == 1 and _gone_v["-dxftQC09H4"] == 3,
+_kept_v, _gone_v = _cv.drop_videos(_vrows, {"-aaaaaaaaaa"})
+check("the hyphen-led ID removes exactly its own comments", len(_kept_v) == 1 and _gone_v["-aaaaaaaaaa"] == 3,
       (len(_kept_v), _gone_v))
 try:
-    _cv.check_ids({"dxftQC09H4"}, known_ids={"-dxftQC09H4", "AAAAAAAAAAA"})
+    _cv.check_ids({"aaaaaaaaaa"}, known_ids={"-aaaaaaaaaa", "AAAAAAAAAAA"})
     check("an ID with its leading hyphen dropped is refused", False, "no SystemExit")
 except SystemExit as _e:
     _msg = str(_e)
     check("an ID with its leading hyphen dropped is refused, with the likely real one suggested",
-          "11" in _msg and "did you mean -dxftQC09H4" in _msg, _msg)
-_kept_sub, _ = _cv.drop_videos(_vrows, {"dxftQC09H4"})
+          "11" in _msg and "did you mean -aaaaaaaaaa" in _msg, _msg)
+_kept_sub, _ = _cv.drop_videos(_vrows, {"aaaaaaaaaa"})
 check("and a list entry that is only a substring of a real ID no longer removes anything",
       len(_kept_sub) == 4, len(_kept_sub))
-_cv.check_ids({"-dxftQC09H4", "AAAAAAAAAAA"})
+_cv.check_ids({"-aaaaaaaaaa", "AAAAAAAAAAA"})
 check("valid IDs, including one starting with a hyphen, pass the check", True)
 
 if project_file("excluded_video_ids.txt"):

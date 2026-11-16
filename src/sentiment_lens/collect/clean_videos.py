@@ -6,9 +6,9 @@ CSV, before merging.
 
 A video is identified by its 11-character ID, taken from the `source` URL every row
 carries, and matched EXACTLY. This used to be a substring test, which hid a real
-mistake: a list entry written without its leading hyphen ("dxftQC09H4" for the video
-"-dxftQC09H4") still matched, by luck of the substring, and would have silently put
-1,471 comments back the day the matching was tightened. An entry that is not a valid
+mistake: a list entry written without its leading hyphen ("aaaaaaaaaa" for the video
+"-aaaaaaaaaa") still matched, by luck of the substring, and would have silently put
+that video's comments back the day the matching was tightened. An entry that is not a valid
 video ID is now refused with a hint, and an ID that matches nothing is reported.
 
 Reports before and after counts per video; keep that output for the methodology notes.
