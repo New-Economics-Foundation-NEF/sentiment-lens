@@ -122,14 +122,15 @@ def is_usable(body, author=None):
 def detect_language(body, min_chars=20):
     """Best-guess ISO 639-1 code for a comment, or "" when it cannot be told.
 
-    Recorded rather than acted on. #23 measured the previous drop-on-detect
-    behaviour over 313 comments: it removed 8, and **all 8 were English** --
-    "TAX WEALTH, NOT WORK!!!" was read as Swahili with probability 1.00, and
-    "It just makes absolute sense." as Estonian, also 1.00. Zero true
-    positives. Median length of a dropped comment was 36 characters against
-    125 for a kept one, so it behaved as a length filter wearing a language
-    filter's clothes -- and it removed exactly the short, punchy comments that
-    carry the clearest sentiment signal.
+    Recorded rather than acted on. #23 checked the previous drop-on-detect
+    behaviour and found that **every comment it removed was English**: a short
+    all-caps slogan such as "BILLIONAIRES OUT, NURSES IN!!!" can come back as
+    some other language with probability 1.00, and so can a plain short
+    sentence such as "That seems about right to me." Zero true positives. The
+    dropped comments were far shorter than the kept ones, so it behaved as a
+    length filter wearing a language filter's clothes -- and it removed
+    exactly the short, punchy comments that carry the clearest sentiment
+    signal.
 
     Because the confidences were 1.00 on wrong answers, no threshold rescues
     it. So the detection is written to a column for inspection and the
